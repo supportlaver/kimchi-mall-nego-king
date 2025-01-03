@@ -1,5 +1,6 @@
 package com.supportkim.kimchimall.payment.infrasturcture;
 
+import com.supportkim.kimchimall.payment.service.dto.PaymentExtraDetails;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -109,5 +110,16 @@ public class PaymentEvent {
     private boolean allPaymentOrdersDone() {
         return paymentOrders.stream()
                 .allMatch(order -> order.isWalletUpdated() && order.isLedgerUpdated());
+    }
+
+    public void updatePaymentKey(String paymentKey) {
+        this.paymentKey = paymentKey;
+    }
+
+    public void updateExtraDetails(PaymentExtraDetails extraDetails) {
+        this.orderName = extraDetails.getOrderName();
+        this.paymentMethod = extraDetails.getMethod();
+        this.approvedAt = extraDetails.getApprovedAt();
+        this.paymentType = extraDetails.getType();
     }
 }

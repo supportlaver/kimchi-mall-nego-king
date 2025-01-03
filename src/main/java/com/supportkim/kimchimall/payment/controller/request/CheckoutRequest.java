@@ -2,6 +2,7 @@ package com.supportkim.kimchimall.payment.controller.request;
 
 import lombok.Data;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -9,10 +10,10 @@ import java.util.List;
  */
 @Data
 public class CheckoutRequest {
-    private Long cartId;
-    private List<Long> kimchiIds;
-    private Long buyerId;
+    private Long cartId = 3L;
+    private List<Long> kimchiIds = List.of(1L,2L,3L);
+    private Long buyerId = 4L;
     // LocalDateTime.now().toString()
-    private String seed;
+    private String seed = LocalDateTime.now().toString();
 
 }

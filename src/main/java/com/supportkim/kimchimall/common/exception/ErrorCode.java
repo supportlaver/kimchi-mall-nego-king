@@ -37,7 +37,9 @@ public enum ErrorCode {
     /**
      * Payment Error Code
      */
-    PAYMENT_ERROR(HttpStatus.BAD_REQUEST , "Payment001" , "결제에 실패했습니다.");
+    PAYMENT_ERROR(HttpStatus.BAD_REQUEST , "Payment001" , "결제에 실패했습니다."),
+    NOT_FOUND_PAYMENT_EVENT(HttpStatus.NOT_FOUND , "Payment002" , "찾을 수 없는 결제 입니다.");
+
 
     private final HttpStatus status;
     private final String code;

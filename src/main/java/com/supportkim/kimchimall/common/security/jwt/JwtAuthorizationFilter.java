@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.util.Optional;
 
 @RequiredArgsConstructor
+@Slf4j
 public class JwtAuthorizationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
@@ -26,6 +27,24 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+        String requestUrl = request.getRequestURI();
+
+        if (requestUrl.startsWith("/test")) {
+            log.info("Skipping JWT filter for request = {}", requestUrl);
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        if (requestUrl.startsWith("/success")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        if (requestUrl.startsWith("/fail")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         jwtService.extractAccessToken(request)
                 .filter(jwtService::isTokenValid)
                 .ifPresentOrElse(

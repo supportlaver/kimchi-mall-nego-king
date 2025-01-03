@@ -75,4 +75,8 @@ public class PaymentOrder {
     public void settingPaymentEvent(PaymentEvent paymentEvent) {
         this.paymentEvent = paymentEvent;
     }
+
+    public void updateOrderStatus(PaymentStatus paymentStatus) {
+        this.paymentStatus = paymentStatus;
+    }
 }

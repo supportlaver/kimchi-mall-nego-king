@@ -25,6 +25,18 @@ public class MemberInterceptor implements HandlerInterceptor {
     private final MemberCacheRepository cacheRepository;
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+        String requestUrl = request.getRequestURI();
+        if (requestUrl.startsWith("/test")) {
+            return true;
+        }
+
+        if (requestUrl.startsWith("/success")) {
+            return true;
+        }
+
+        if (requestUrl.startsWith("/fail")) {
+            return true;
+        }
         String accessToken = jwtService.extractAccessToken(request)
                 .orElseThrow(() -> new BaseException(ErrorCode.NOT_EXIST_TOKEN));
         String email = jwtService.extractMemberEmail(accessToken);
