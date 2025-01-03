@@ -1,10 +1,20 @@
 package com.supportkim.kimchimall.payment.controller.response;
 
+import com.supportkim.kimchimall.payment.infrasturcture.PaymentEvent;
+import lombok.Builder;
 import lombok.Data;
 
-@Data
+@Data @Builder
 public class CheckoutResponse {
-    private Long orderId;
+    private String orderId;
     private String orderName;
-    private Long amount;
+    private int amount;
+
+    public static CheckoutResponse from(PaymentEvent paymentEvent) {
+        return CheckoutResponse.builder()
+                .orderId(paymentEvent.getOrderId())
+                .orderName(paymentEvent.getOrderName())
+                .amount(paymentEvent.totalAmount())
+                .build();
+    }
 }

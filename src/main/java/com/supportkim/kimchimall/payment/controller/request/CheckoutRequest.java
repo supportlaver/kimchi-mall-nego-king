@@ -14,4 +14,5 @@ public class CheckoutRequest {
     private Long buyerId;
     // LocalDateTime.now().toString()
     private String seed;
+
 }
