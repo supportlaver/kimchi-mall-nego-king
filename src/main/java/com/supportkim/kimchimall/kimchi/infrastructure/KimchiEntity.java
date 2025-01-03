@@ -36,6 +36,7 @@ public class KimchiEntity extends BaseEntity {
     @OneToMany(cascade = ALL , mappedBy = "kimchi")
     private List<CartKimchiEntity> cartKimchiEntityList = new ArrayList<>();
     private int quantity;
+    private Long sellerId;
 
 /*    @Version
     private int version;*/

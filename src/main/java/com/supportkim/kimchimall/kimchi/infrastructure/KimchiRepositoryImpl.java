@@ -42,4 +42,9 @@ public class KimchiRepositoryImpl implements KimchiRepository {
     public void save(Kimchi kimchi) {
         kimchiJpaRepository.save(KimchiEntity.from(kimchi));
     }
+
+    @Override
+    public List<KimchiEntity> findByIds(List<Long> kimchiIds) {
+        return kimchiJpaRepository.findAllByIdIn(kimchiIds);
+    }
 }

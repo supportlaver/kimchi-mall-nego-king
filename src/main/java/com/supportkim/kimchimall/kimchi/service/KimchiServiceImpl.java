@@ -12,6 +12,7 @@ import com.supportkim.kimchimall.kimchi.controller.response.FindLowestPriceRespo
 import com.supportkim.kimchimall.kimchi.controller.response.KimchiResponseDto;
 import com.supportkim.kimchimall.kimchi.domain.Kimchi;
 import com.supportkim.kimchimall.kimchi.infrastructure.KimchiCacheRepository;
+import com.supportkim.kimchimall.kimchi.infrastructure.KimchiEntity;
 import com.supportkim.kimchimall.kimchi.infrastructure.LowestPriceKimchiCacheRepository;
 import com.supportkim.kimchimall.kimchi.service.port.KimchiRepository;
 import com.supportkim.kimchimall.member.controller.port.MemberService;
@@ -64,6 +65,11 @@ public class KimchiServiceImpl implements KimchiService {
             return SingleKimchi.from(cacheKimchi.get());
         }
         return SingleKimchi.from(kimchiRepository.findByName(kimchiName));
+    }
+
+    @Override
+    public List<KimchiEntity> getKimchis(List<Long> kimchiIds) {
+        return kimchiRepository.findByIds(kimchiIds);
     }
 
     private Member findMemberFromAccessToken(HttpServletRequest request) {
