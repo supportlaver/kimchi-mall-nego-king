@@ -2,43 +2,31 @@ package com.supportkim.kimchimall.wallet.infrasturcture;
 
 import com.supportkim.kimchimall.common.exception.BaseException;
 import com.supportkim.kimchimall.common.exception.ErrorCode;
-import com.supportkim.kimchimall.ledger.infrasturcture.AccountJpaRepository;
-import com.supportkim.kimchimall.ledger.infrasturcture.LedgerEntryJpaRepository;
-import com.supportkim.kimchimall.ledger.infrasturcture.LedgerTransactionJpaRepository;
-import com.supportkim.kimchimall.member.infrastructure.MemberJpaRepository;
-import com.supportkim.kimchimall.payment.infrasturcture.*;
+import com.supportkim.kimchimall.payment.infrasturcture.PaymentOrder;
+import com.supportkim.kimchimall.payment.infrasturcture.PaymentOrderJpaRepository;
 import com.supportkim.kimchimall.payment.service.event.PaymentEventMessage;
 import com.supportkim.kimchimall.wallet.infrasturcture.event.WalletCompleteEventMessage;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.dao.CannotAcquireLockException;
-import org.springframework.orm.ObjectOptimisticLockingFailureException;
-import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Propagation;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.event.TransactionPhase;
-import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-@Component @Slf4j
+@Service
 @RequiredArgsConstructor
-public class WalletPaymentEventListener {
+public class WalletServiceForKafka {
+
     private final PaymentOrderJpaRepository paymentOrderRepository;
     private final WalletTransactionJpaRepository walletTransactionRepository;
     private final WalletJpaRepository walletRepository;
-
     private final ApplicationEventPublisher eventPublisher;
-
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    // REQUIRES_NEW 는 TPS 가 높을 경우 너무 큰 부하를 갖게 됨
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void walletProcess(PaymentEventMessage event) {
-
+    @Transactional
+    public void processWalletEvent(PaymentEventMessage event) {
         if (walletTransactionRepository.existsByOrderId(event.getOrderId())) {
             throw new BaseException(ErrorCode.ALREADY_PAYMENT_WALLET_PROCESS);
         }
@@ -87,4 +75,5 @@ public class WalletPaymentEventListener {
             walletTransactionRepository.saveAll(transactions);
         });
     }
+
 }
