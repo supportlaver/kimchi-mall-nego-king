@@ -1,9 +1,10 @@
 package com.supportkim.kimchimall.ledger.infrasturcture.event;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.*;
 
-@Data
+@Getter
+@Setter
+@NoArgsConstructor
 @AllArgsConstructor
 public class LedgerCompleteEventMessage {
     private String orderId;
