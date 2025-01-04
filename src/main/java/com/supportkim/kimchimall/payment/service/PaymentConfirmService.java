@@ -5,11 +5,14 @@ import com.supportkim.kimchimall.common.exception.ErrorCode;
 import com.supportkim.kimchimall.common.exception.PaymentAlreadyProcessedException;
 import com.supportkim.kimchimall.common.exception.PaymentValidationException;
 import com.supportkim.kimchimall.common.util.Pair;
+import com.supportkim.kimchimall.ledger.infrasturcture.*;
+import com.supportkim.kimchimall.member.controller.port.MemberService;
+import com.supportkim.kimchimall.member.domain.Member;
+import com.supportkim.kimchimall.member.infrastructure.MemberEntity;
+import com.supportkim.kimchimall.member.infrastructure.MemberJpaRepository;
 import com.supportkim.kimchimall.payment.controller.response.PaymentConfirmationResult;
 import com.supportkim.kimchimall.payment.infrasturcture.*;
-import com.supportkim.kimchimall.payment.service.dto.PaymentConfirmCommand;
-import com.supportkim.kimchimall.payment.service.dto.PaymentExecutionResult;
-import com.supportkim.kimchimall.payment.service.dto.PaymentStatusUpdateCommand;
+import com.supportkim.kimchimall.payment.service.dto.*;
 import com.supportkim.kimchimall.wallet.infrasturcture.Wallet;
 import com.supportkim.kimchimall.wallet.infrasturcture.WalletJpaRepository;
 import com.supportkim.kimchimall.wallet.infrasturcture.WalletTransaction;
@@ -18,23 +21,28 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class PaymentConfirmService {
-
     private final PaymentEventJpaRepository paymentEventRepository;
     private final PaymentOrderJpaRepository paymentOrderRepository;
     private final PaymentOrderHistoryJpaRepository paymentOrderHistoryRepository;
     private final TossPaymentExecutor tossPaymentExecutor;
     private final WalletTransactionJpaRepository walletTransactionRepository;
     private final WalletJpaRepository walletRepository;
+    private final LedgerTransactionJpaRepository ledgerTransactionRepository;
+    private final MemberJpaRepository memberRepository;
+    private final LedgerEntryJpaRepository ledgerEntryRepository;
+    private final AccountJpaRepository accountRepository;
 
 
     @Transactional
@@ -81,9 +89,9 @@ public class PaymentConfirmService {
         updatePaymentStatus(paymentStatusUpdateCommand);
 
         // 5. Wallet (정산 처리)
-        // 5-1) 중복된 결제 정보를 처리하는지 확인
+        // 5-1) 중복된 정산 처리를 하는지 확인
         if (walletTransactionRepository.existsByOrderId(command.getOrderId())) {
-            throw new BaseException(ErrorCode.ALREADY_PAYMENT_PROCESS);
+            throw new BaseException(ErrorCode.ALREADY_PAYMENT_WALLET_PROCESS);
         }
         // 5-2) 결제 주문 정보를 가지고 온다.
         // 5-3) 판매자별 결제 주문 정보 그룹화
@@ -93,16 +101,80 @@ public class PaymentConfirmService {
         // 5-4) 지갑 업데이트
         getUpdatedWallets(paymentOrdersBySellerId);
 
-        // 6. Ledger (장부 기입 처리)
-        // 6-1) 중복된 결제 정보를 처리하는지 확인
-        // 6-2) 계정 및 결제 주문 로드
-        // 6-3) 복식부기 엔트리 생성 (Ledger)
-        // 6-4) 복식 부기 엔트리 저장
+        // 지갑 업데이트가 성공적으로 끝났다면 Update
+        paymentOrders.forEach(PaymentOrder::confirmWalletUpdate);
 
+        // 6. Ledger (장부 기입 처리)
+        // 6-1) 중복된 장부 기입 처리를 하는지 확인
+        if (ledgerTransactionRepository.existsByOrderId(command.getOrderId())) {
+            throw new BaseException(ErrorCode.ALREADY_PAYMENT_LEDGER_PROCESS);
+        }
+        // 6-2) 계정 및 결제 주문 로드
+        MemberEntity buyer = findById();
+        Account buyerAccount = accountRepository.findByMemberId(buyer.getId()).orElseThrow(()
+                -> new BaseException(ErrorCode.MEMBER_ACCOUNT_NOT_FOUND));
+
+        Set<Long> sellerIds = paymentOrdersBySellerId.keySet();
+        List<Account> sellerAccounts = accountRepository.findByMemberIds(sellerIds);
+        // 6-3) 복식부기 엔트리 생성 (Ledger)
+        List<DoubleAccountsForLedger> ledgerList = sellerAccounts.stream()
+                .map(sellerAccount -> {
+                    DoubleAccountsForLedger ledger = new DoubleAccountsForLedger();
+                    ledger.setTo(buyerAccount);    // 구매자 계좌
+                    ledger.setFrom(sellerAccount); // 판매자 계좌
+                    return ledger;
+                })
+                .toList();
+
+        List<LedgerEntry> ledgerEntries = createLedgerEntries(ledgerList, paymentOrders);
+        // 6-4) 복식 부기 엔트리 저장
+        ledgerEntryRepository.saveAll(ledgerEntries);
+
+        // 장부 업데이트가 끝났다면 Update
+        paymentOrders.forEach(PaymentOrder::confirmLedgerUpdate);
+
+        // 모든 업데이트가 끝났다면 paymentEvent 도 Update
+        paymentEvent.confirmPaymentDone();
 
         // 5. 결과 반환
         return new PaymentConfirmationResult(paymentExecutionResult.paymentStatus(), paymentExecutionResult.getFailure());
     }
+
+    private List<LedgerEntry> createLedgerEntries(List<DoubleAccountsForLedger> ledgerList, List<PaymentOrder> paymentOrders) {
+        return ledgerList.stream()
+                // ledger(구매자/판매자) x order(주문) 조합을 flatMap
+                .flatMap(ledger -> paymentOrders.stream().flatMap(order -> {
+                    LedgerTransaction transaction = LedgerTransaction.builder()
+                            .referenceType("PAYMENT_ORDER")
+                            .referenceId(1L)
+                            .orderId(order.getOrderId())
+                            .idempotencyKey(order.getOrderId())
+                            .build();
+
+                    LedgerEntry creditEntry = LedgerEntry.builder()
+                            .amount(BigDecimal.valueOf(order.getAmount()))
+                            .accountId(ledger.getTo().getId())  // buyer account
+                            .transaction(transaction)
+                            .type(LedgerEntryType.CREDIT)
+                            .build();
+
+                    LedgerEntry debitEntry = LedgerEntry.builder()
+                            .amount(BigDecimal.valueOf(order.getAmount()))
+                            .accountId(ledger.getFrom().getId())  // seller account
+                            .transaction(transaction)
+                            .type(LedgerEntryType.DEBIT)
+                            .build();
+
+                    // CREDIT/DEBIT 두 개의 엔티티를 Stream으로 반환
+                    return Stream.of(creditEntry, debitEntry);
+                }))
+                .collect(Collectors.toList());
+    }
+
+    private MemberEntity findById() {
+        return memberRepository.findById(1L).get();
+    }
+
 
     private void getUpdatedWallets(Map<Long, List<PaymentOrder>> paymentOrdersBySellerId) {
         Set<Long> sellerIds = paymentOrdersBySellerId.keySet();

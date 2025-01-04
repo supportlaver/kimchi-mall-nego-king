@@ -1,5 +1,7 @@
 package com.supportkim.kimchimall.ledger.infrasturcture;
 
+import com.supportkim.kimchimall.member.domain.Member;
+import com.supportkim.kimchimall.member.infrastructure.MemberEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 
@@ -7,9 +9,10 @@ import lombok.Getter;
 @Table(name = "accounts")
 public class Account {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
-    private String name;
+    @OneToOne
+    @JoinColumn(name = "member_id", nullable = false, unique = true) // member_id는 유니크 제약 조건
+    private MemberEntity member;
 }

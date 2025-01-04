@@ -18,6 +18,7 @@ public enum ErrorCode {
     MEMBER_LOGIN_ID_NOT_FOUND(HttpStatus.NOT_FOUND , "M002" , "요청한 로그인 아이디에 해당하는 회원이 존재하지 않습니다."),
     MEMBER_PW_NOT_FOUND(HttpStatus.NOT_FOUND , "M003" , "요청한 비밀번호를 다시 확인해주세요."),
     MEMBER_EMAIL_NOT_FOUND(HttpStatus.NOT_FOUND , "M002" , "요청한 이메일를 다시 확인해주세요"),
+    MEMBER_ACCOUNT_NOT_FOUND(HttpStatus.NOT_FOUND , "M002" , "장부 정보를 다시 확인해주세요"),
 
 
     /**
@@ -39,7 +40,8 @@ public enum ErrorCode {
      */
     PAYMENT_ERROR(HttpStatus.BAD_REQUEST , "Payment001" , "결제에 실패했습니다."),
     NOT_FOUND_PAYMENT_EVENT(HttpStatus.NOT_FOUND , "Payment002" , "찾을 수 없는 결제 입니다."),
-    ALREADY_PAYMENT_PROCESS(HttpStatus.BAD_REQUEST , "Payment003" , "이미 정산 처리된 결제 입니다.");
+    ALREADY_PAYMENT_WALLET_PROCESS(HttpStatus.BAD_REQUEST , "Payment003" , "이미 정산 처리된 결제 입니다."),
+    ALREADY_PAYMENT_LEDGER_PROCESS(HttpStatus.BAD_REQUEST , "Payment004" , "이미 장부 기입이 처리된 결제 입니다.");
 
     private final HttpStatus status;
     private final String code;

@@ -64,6 +64,10 @@ public class PaymentEvent {
                 .sum();
     }
 
+    public void confirmPaymentDone() {
+        this.isPaymentDone = true;
+    }
+
     public boolean isPaymentDone() {
         return isPaymentDone;
     }
