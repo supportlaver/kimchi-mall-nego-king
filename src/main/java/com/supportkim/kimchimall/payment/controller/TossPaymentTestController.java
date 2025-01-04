@@ -14,17 +14,18 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-@RequestMapping("/v1/toss")
+@RequestMapping("/test")
 @RestController @Slf4j
 @RequiredArgsConstructor
-public class TossPaymentController {
+public class TossPaymentTestController {
 
     private final PaymentConfirmService paymentConfirmService;
 
     @PostMapping("/confirm")
-    public ResponseEntity<BaseResponse<PaymentConfirmationResult>> confirm(@RequestBody TossPaymentConfirmRequest request) {
+    public ResponseEntity<BaseResponse<PaymentConfirmationResult>> testConfirm(@RequestBody TossPaymentConfirmTest request) {
         log.info("confirm 호출");
-        PaymentConfirmCommand command = PaymentConfirmCommand.from(request);
-        return ResponseEntity.ok().body(new BaseResponse<>(paymentConfirmService.confirm(command)));
+        log.info("confirmTest = {} " , request);
+        TossPaymentConfirmTest command = TossPaymentConfirmTest.from(request);
+        return ResponseEntity.ok().body(new BaseResponse<>(paymentConfirmService.testConfirm(command)));
     }
 }

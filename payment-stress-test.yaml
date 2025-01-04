@@ -1,0 +1,41 @@
+config:
+  target: 'http://localhost:8081'
+  phases:
+    - duration: 1
+      arrivalRate: 5
+      name: Steady Load
+  payload:
+    path: "ids.csv"
+    fields:
+      - "memberId"
+
+  defaults:
+    headers:
+      authorization: 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJBY2Nlc3NUb2tlbiIsInN1YmplY3QiOiJqaXdvbkBpbnUuYWMua3IiLCJleHAiOjE4MzU2MjUxNTF9.PlLMmQJfTZBB-JmMrGWJnBT40O38NlfTgaN3sZo-xYJUm2GPOBEvF9rOHu0mzgpCOd1ibeQzSYqEJ-MYFtmJ-Q'
+  plugins:
+    faker: {}
+
+
+scenarios:
+  - flow:
+      - post:
+          url: "/api/check-out"
+          json:
+            cartId: 1
+            kimchiIds:
+              - 1
+              - 2
+              - 3
+            buyerId: 1
+            seed: "{{ date.now }}"
+          capture:
+            - json: "$.result.orderId"
+              as: "orderId"
+
+      - post:
+          url: "/test/confirm"
+          json:
+            paymentKey: "{{ faker.random.uuid }}"
+            orderId: "{{ orderId }}"
+            memberId: "{{ memberId }}"
+            amount: 38000
