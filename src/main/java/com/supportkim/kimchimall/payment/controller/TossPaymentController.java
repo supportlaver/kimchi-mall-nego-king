@@ -23,8 +23,19 @@ public class TossPaymentController {
 
     @PostMapping("/confirm")
     public ResponseEntity<BaseResponse<PaymentConfirmationResult>> confirm(@RequestBody TossPaymentConfirmRequest request) {
-        log.info("confirm 호출");
         PaymentConfirmCommand command = PaymentConfirmCommand.from(request);
         return ResponseEntity.ok().body(new BaseResponse<>(paymentConfirmService.confirm(command)));
+    }
+
+    @PostMapping("/confirm-eda")
+    public ResponseEntity<BaseResponse<PaymentConfirmationResult>> confirmEDA(@RequestBody TossPaymentConfirmRequest request) {
+        PaymentConfirmCommand command = PaymentConfirmCommand.from(request);
+        return ResponseEntity.ok().body(new BaseResponse<>(paymentConfirmService.confirmEDA(command)));
+    }
+
+    @PostMapping("/confirm-kafka")
+    public ResponseEntity<BaseResponse<PaymentConfirmationResult>> confirmKafka(@RequestBody TossPaymentConfirmRequest request) {
+        PaymentConfirmCommand command = PaymentConfirmCommand.from(request);
+        return ResponseEntity.ok().body(new BaseResponse<>(paymentConfirmService.confirmKafka(command)));
     }
 }

@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.util.List;
+import java.util.UUID;
 
 @Data @Builder
 public class CheckoutCommand {
@@ -19,7 +20,8 @@ public class CheckoutCommand {
                 .cartId(request.getCartId())
                 .buyerId(request.getBuyerId())
                 .kimchiIds(request.getKimchiIds())
-                .idempotencyKey(IdempotencyCreator.create(request.getSeed()))
+                // .idempotencyKey(IdempotencyCreator.create(request.getSeed()))
+                .idempotencyKey(UUID.randomUUID().toString())
                 .build();
     }
 }

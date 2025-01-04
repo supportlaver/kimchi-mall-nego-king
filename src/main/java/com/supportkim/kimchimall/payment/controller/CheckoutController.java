@@ -21,7 +21,6 @@ public class CheckoutController {
     // 구매자가 상품을 선택한 후 주문을 확인하고 결제를 준비
     @PostMapping("/check-out")
     public ResponseEntity<BaseResponse<CheckoutResponse>> checkoutPage(@RequestBody CheckoutRequest request) {
-        log.info("request = {} " , request.toString());
         CheckoutCommand command = CheckoutCommand.from(request);
         return ResponseEntity.ok().body(new BaseResponse<>(checkoutService.checkout(command)));
     }
