@@ -28,4 +28,5 @@ public class TossPaymentTestController {
         TossPaymentConfirmTest command = TossPaymentConfirmTest.from(request);
         return ResponseEntity.ok().body(new BaseResponse<>(paymentConfirmService.testConfirm(command)));
     }
+
 }
