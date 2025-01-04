@@ -32,4 +32,10 @@ public class TossPaymentController {
         PaymentConfirmCommand command = PaymentConfirmCommand.from(request);
         return ResponseEntity.ok().body(new BaseResponse<>(paymentConfirmService.confirmEDA(command)));
     }
+
+    @PostMapping("/confirm-kafka")
+    public ResponseEntity<BaseResponse<PaymentConfirmationResult>> confirmKafka(@RequestBody TossPaymentConfirmRequest request) {
+        PaymentConfirmCommand command = PaymentConfirmCommand.from(request);
+        return ResponseEntity.ok().body(new BaseResponse<>(paymentConfirmService.confirmKafka(command)));
+    }
 }

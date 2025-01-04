@@ -34,4 +34,11 @@ public class TossPaymentTestController {
         return ResponseEntity.ok().body(new BaseResponse<>(paymentConfirmService.testConfrimEDA(command)));
     }
 
+    @PostMapping("/confirm-kafka")
+    public ResponseEntity<BaseResponse<PaymentConfirmationResult>> testConfirmKafka(@RequestBody TossPaymentConfirmTest request) {
+        log.info("JIWON request = {} " , request);
+        TossPaymentConfirmTest command = TossPaymentConfirmTest.from(request);
+        return ResponseEntity.ok().body(new BaseResponse<>(paymentConfirmService.testConfirm(command)));
+    }
+
 }
