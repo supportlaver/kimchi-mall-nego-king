@@ -50,7 +50,7 @@ public class CustomAuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         member.settingCart(savedCart);
         memberRepository.saveForLogin(member);
         // TODO: 9/9/24 프론트와 연결하게 되면 로컬 스토리지에 상품이 있다면 Cart 에 옮기는 작업이 필요합니다.
-        log.info("member = {} " ,member);
+
         MemberLoginResponse loginResponse = MemberLoginResponse.from(member, token);
         // Cache 에 저장
 

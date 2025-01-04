@@ -85,7 +85,6 @@ public class OrderServiceImpl implements OrderService {
 
         // 2. OrderKimchi -> Order 로 만들고 DB 저장
         Order order = Order.of(orderKimchis, member , orderTotalPrice);
-        log.info("order ={} " , order.getMember());
 
         Order createOrder = orderRepository.save(order);
 

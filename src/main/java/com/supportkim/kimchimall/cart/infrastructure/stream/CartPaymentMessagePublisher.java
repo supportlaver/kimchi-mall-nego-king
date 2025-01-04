@@ -20,9 +20,7 @@ public class CartPaymentMessagePublisher {
         this.transactionalEventPublisher = new TransactionalEventPublisher(publisher);
     }
     public Mono<CartOrderEventMessage> publishEvent(CartOrderEventMessage eventMessage) {
-        log.info("JIWON : publishing event : {} " , eventMessage);
         Mono<CartOrderEventMessage> cartOrderEventMessageMono = transactionalEventPublisher.publishEvent(eventMessage).thenReturn(eventMessage);
-        log.info("publishEvent 성공");
         return cartOrderEventMessageMono;
     }
 }
