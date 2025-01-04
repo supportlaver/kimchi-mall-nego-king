@@ -2,6 +2,7 @@ package com.supportkim.kimchimall.ledger.infrasturcture;
 
 import com.supportkim.kimchimall.common.exception.BaseException;
 import com.supportkim.kimchimall.common.exception.ErrorCode;
+import com.supportkim.kimchimall.ledger.infrasturcture.event.LedgerCompleteEventMessage;
 import com.supportkim.kimchimall.member.infrastructure.MemberEntity;
 import com.supportkim.kimchimall.member.infrastructure.MemberJpaRepository;
 import com.supportkim.kimchimall.payment.infrasturcture.PaymentOrder;
@@ -11,6 +12,7 @@ import com.supportkim.kimchimall.payment.service.event.PaymentEventMessage;
 import com.supportkim.kimchimall.wallet.infrasturcture.WalletJpaRepository;
 import com.supportkim.kimchimall.wallet.infrasturcture.WalletTransactionJpaRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,13 +30,13 @@ import java.util.stream.Stream;
 @RequiredArgsConstructor
 public class LedgerPaymentEventListener {
 
-    private final WalletTransactionJpaRepository walletTransactionRepository;
     private final PaymentOrderJpaRepository paymentOrderRepository;
     private final LedgerTransactionJpaRepository ledgerTransactionRepository;
     private final AccountJpaRepository accountRepository;
-    private final WalletJpaRepository walletRepository;
     private final LedgerEntryJpaRepository ledgerEntryRepository;
     private final MemberJpaRepository memberRepository;
+
+    private final ApplicationEventPublisher eventPublisher;
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void ledgerProcess(PaymentEventMessage event) {
@@ -67,6 +69,9 @@ public class LedgerPaymentEventListener {
         List<LedgerEntry> ledgerEntries = createLedgerEntries(ledgerList, paymentOrders);
         // 6-4) 복식 부기 엔트리 저장
         ledgerEntryRepository.saveAll(ledgerEntries);
+        // 업데이트
+        paymentOrders.forEach(PaymentOrder::confirmLedgerUpdate);
+        eventPublisher.publishEvent(new LedgerCompleteEventMessage(event.getOrderId()));
     }
     private List<LedgerEntry> createLedgerEntries(List<DoubleAccountsForLedger> ledgerList, List<PaymentOrder> paymentOrders) {
         return ledgerList.stream()

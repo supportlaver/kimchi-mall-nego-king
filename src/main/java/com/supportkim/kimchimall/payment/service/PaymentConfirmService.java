@@ -22,6 +22,10 @@ import com.supportkim.kimchimall.wallet.infrasturcture.WalletTransactionJpaRepos
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.dao.CannotAcquireLockException;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -50,6 +54,53 @@ public class PaymentConfirmService {
     private final MockTossPaymentExecutor mockTossPaymentExecutor;
 
     private final ApplicationEventPublisher eventPublisher;
+
+    @Transactional
+    public PaymentConfirmationResult testConfrimEDA(TossPaymentConfirmTest command) {
+        // 1. 결제 상태를 EXECUTING 업데이트
+        PaymentEvent paymentEvent = paymentEventRepository.findByOrderId(command.getOrderId())
+                .orElseThrow(() -> new BaseException(ErrorCode.NOT_FOUND_PAYMENT_EVENT));
+
+        List<Pair<Long, String>> result = checkPreviousPaymentOrderStatus(paymentEvent.getOrderId());
+
+        // 엔터티 리스트 생성
+        List<PaymentOrderHistory> paymentHistories = result.stream()
+                .map(pair -> PaymentOrderHistory.builder()
+                        .paymentOrderId(pair.getKey()) // Order ID
+                        .previousStatus(PaymentStatus.get(pair.getValue())) // 이전 상태
+                        .newStatus(PaymentStatus.EXECUTING) // 새로운 상태
+                        .reason("PAYMENT_CONFIRMATION_START") // 변경 이유
+                        .createdAt(LocalDateTime.now())
+                        .build())
+                .collect(Collectors.toList());
+
+        // 데이터 저장
+        paymentOrderHistoryRepository.saveAll(paymentHistories);
+
+        List<PaymentOrder> paymentOrders = paymentOrderRepository.findByOrderId(command.getOrderId());
+
+        paymentOrders.forEach(paymentOrder -> paymentOrder.updateOrderStatus(PaymentStatus.EXECUTING));
+
+        // PaymentEvent 에서 PaymentKey 업데이트 (TossAPI 에서 발급해준 Key)
+        paymentEvent.updatePaymentKey(command.getPaymentKey());
+
+
+        // 2. 결제 유효성 검증 (결제 금액을 비교하여 검증)
+        Integer amount = paymentOrderRepository.findTotalAmountByOrderId(command.getOrderId());
+        // 만약 문제가 있다면 예외 발생
+        isValid(amount, command.getAmount(), command.getOrderId());
+
+        // 테스트를 할 때는 Mock 객체로 대체
+        PaymentExecutionResult paymentExecutionResult = mockTossPaymentExecutor.execute(command);
+
+        // 4. 결제 상태 업데이트
+        PaymentStatusUpdateCommand paymentStatusUpdateCommand = PaymentStatusUpdateCommand.from(paymentExecutionResult);
+        updatePaymentStatus(paymentStatusUpdateCommand);
+
+        // 여기까지만 하고 정산 처리 및 장부 기입은 다른 트랜잭션에서 처리 하도록 한다.
+        eventPublisher.publishEvent(new PaymentEventMessage(command.getOrderId() , 1L));
+        return new PaymentConfirmationResult(paymentExecutionResult.paymentStatus(), paymentExecutionResult.getFailure());
+    }
 
     @Transactional
     public PaymentConfirmationResult confirmEDA(PaymentConfirmCommand command) {
@@ -96,13 +147,6 @@ public class PaymentConfirmService {
         // 여기까지만 하고 정산 처리 및 장부 기입은 다른 트랜잭션에서 처리 하도록 한다.
         eventPublisher.publishEvent(new PaymentEventMessage(command.getOrderId() , 1L));
         return new PaymentConfirmationResult(paymentExecutionResult.paymentStatus(), paymentExecutionResult.getFailure());
-/*
-        // 장부 업데이트가 끝났다면 Update
-        paymentOrders.forEach(PaymentOrder::confirmLedgerUpdate);
-
-        // 모든 업데이트가 끝났다면 paymentEvent 도 Update
-        paymentEvent.confirmPaymentDone();
-*/
     }
 
 
@@ -204,6 +248,11 @@ public class PaymentConfirmService {
      * 멀티 스레드 환경에서는 데드락 발생
      * 트랜잭션 범위를 줄이
      */
+    @Retryable(
+            value = {ObjectOptimisticLockingFailureException.class, CannotAcquireLockException.class},
+            maxAttempts = 6,
+            backoff = @Backoff(delay = 500, multiplier = 2)
+    )
     @Transactional
     public PaymentConfirmationResult testConfirm(TossPaymentConfirmTest command) {
         // 1. 결제 상태를 EXECUTING 업데이트
@@ -244,8 +293,6 @@ public class PaymentConfirmService {
 
         // 테스트를 할 때는 Mock 객체로 대체
         PaymentExecutionResult paymentExecutionResult = mockTossPaymentExecutor.execute(command);
-
-        log.info("result = {} " , paymentExecutionResult);
 
         // 4. 결제 상태 업데이트
         PaymentStatusUpdateCommand paymentStatusUpdateCommand = PaymentStatusUpdateCommand.from(paymentExecutionResult);
@@ -344,7 +391,7 @@ public class PaymentConfirmService {
         Set<Long> sellerIds = paymentOrdersBySellerId.keySet();
 
         // 지갑 가져오기
-        List<Wallet> wallets = walletRepository.findByUserIds(sellerIds);
+        List<Wallet> wallets = walletRepository.findByUserIdsWithLock(sellerIds);
         System.out.println("wallets = " + wallets.size());
 
         // 지갑 업데이트 후 WalletTransaction 저장
@@ -443,12 +490,6 @@ public class PaymentConfirmService {
     private List<Pair<Long, String>> checkPreviousPaymentOrderStatus(String orderId) {
         // 데이터베이스에서 상태 조회
         List<Object[]> result = paymentOrderRepository.findPaymentOrderStatusByOrderId(orderId);
-
-        for (Object[] objects : result) {
-            System.out.println("JIWON " + objects[0]);
-            System.out.println(objects[1].getClass());
-        }
-
 
         // Object[]를 Pair<Long, String>으로 매핑
         List<Pair<Long, String>> pairs = result.stream()

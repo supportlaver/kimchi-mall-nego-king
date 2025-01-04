@@ -25,8 +25,8 @@ public class Wallet {
     private BigDecimal balance;
 
     // 낙관적 락 (동시성 이슈 해결)
-    @Version
-    private int version;
+    /*@Version
+    private int version;*/
 
 
     /**

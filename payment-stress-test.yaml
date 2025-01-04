@@ -1,9 +1,9 @@
 config:
   target: 'http://localhost:8081'
   phases:
-    - duration: 1
-      arrivalRate: 5
-      name: Steady Load
+    - duration: 15
+      arrivalRate: 150
+      name: Constant Load
   payload:
     path: "ids.csv"
     fields:
@@ -33,7 +33,7 @@ scenarios:
               as: "orderId"
 
       - post:
-          url: "/test/confirm"
+          url: "/test/confirm-eda"
           json:
             paymentKey: "{{ faker.random.uuid }}"
             orderId: "{{ orderId }}"

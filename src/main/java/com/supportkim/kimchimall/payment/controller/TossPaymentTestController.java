@@ -23,10 +23,15 @@ public class TossPaymentTestController {
 
     @PostMapping("/confirm")
     public ResponseEntity<BaseResponse<PaymentConfirmationResult>> testConfirm(@RequestBody TossPaymentConfirmTest request) {
-        log.info("confirm 호출");
-        log.info("confirmTest = {} " , request);
         TossPaymentConfirmTest command = TossPaymentConfirmTest.from(request);
         return ResponseEntity.ok().body(new BaseResponse<>(paymentConfirmService.testConfirm(command)));
+    }
+
+    @PostMapping("/confirm-eda")
+    public ResponseEntity<BaseResponse<PaymentConfirmationResult>> testConfirmEDA(@RequestBody TossPaymentConfirmTest request) {
+        log.info("JIWON request = {} " , request);
+        TossPaymentConfirmTest command = TossPaymentConfirmTest.from(request);
+        return ResponseEntity.ok().body(new BaseResponse<>(paymentConfirmService.testConfrimEDA(command)));
     }
 
 }

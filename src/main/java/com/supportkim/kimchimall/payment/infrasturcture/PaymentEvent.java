@@ -96,6 +96,8 @@ public class PaymentEvent {
     }
 
     public void completeIfDone() {
+        System.out.println("isWalletUpdateDone " + isWalletUpdateDone());
+        System.out.println("isLedgerUpdateDone " + isLedgerUpdateDone());
         if (allPaymentOrdersDone()) {
             isPaymentDone = true;
         }
@@ -111,7 +113,7 @@ public class PaymentEvent {
                 .allMatch(PaymentOrder::isWalletUpdated);
     }
 
-    private boolean allPaymentOrdersDone() {
+    private  boolean allPaymentOrdersDone() {
         return paymentOrders.stream()
                 .allMatch(order -> order.isWalletUpdated() && order.isLedgerUpdated());
     }
