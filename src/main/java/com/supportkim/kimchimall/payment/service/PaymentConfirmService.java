@@ -10,12 +10,18 @@ import com.supportkim.kimchimall.payment.infrasturcture.*;
 import com.supportkim.kimchimall.payment.service.dto.PaymentConfirmCommand;
 import com.supportkim.kimchimall.payment.service.dto.PaymentExecutionResult;
 import com.supportkim.kimchimall.payment.service.dto.PaymentStatusUpdateCommand;
+import com.supportkim.kimchimall.wallet.infrasturcture.Wallet;
+import com.supportkim.kimchimall.wallet.infrasturcture.WalletJpaRepository;
+import com.supportkim.kimchimall.wallet.infrasturcture.WalletTransaction;
+import com.supportkim.kimchimall.wallet.infrasturcture.WalletTransactionJpaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -27,6 +33,8 @@ public class PaymentConfirmService {
     private final PaymentOrderJpaRepository paymentOrderRepository;
     private final PaymentOrderHistoryJpaRepository paymentOrderHistoryRepository;
     private final TossPaymentExecutor tossPaymentExecutor;
+    private final WalletTransactionJpaRepository walletTransactionRepository;
+    private final WalletJpaRepository walletRepository;
 
 
     @Transactional
@@ -72,8 +80,46 @@ public class PaymentConfirmService {
         PaymentStatusUpdateCommand paymentStatusUpdateCommand = PaymentStatusUpdateCommand.from(paymentExecutionResult);
         updatePaymentStatus(paymentStatusUpdateCommand);
 
+        // 5. Wallet (정산 처리)
+        // 5-1) 중복된 결제 정보를 처리하는지 확인
+        if (walletTransactionRepository.existsByOrderId(command.getOrderId())) {
+            throw new BaseException(ErrorCode.ALREADY_PAYMENT_PROCESS);
+        }
+        // 5-2) 결제 주문 정보를 가지고 온다.
+        // 5-3) 판매자별 결제 주문 정보 그룹화
+        // 판매자 ID로 결제 주문 그룹화
+        Map<Long, List<PaymentOrder>> paymentOrdersBySellerId = paymentOrders.stream()
+                .collect(Collectors.groupingBy(PaymentOrder::getSellerId));
+        // 5-4) 지갑 업데이트
+        getUpdatedWallets(paymentOrdersBySellerId);
+
+        // 6. Ledger (장부 기입 처리)
+        // 6-1) 중복된 결제 정보를 처리하는지 확인
+        // 6-2) 계정 및 결제 주문 로드
+        // 6-3) 복식부기 엔트리 생성 (Ledger)
+        // 6-4) 복식 부기 엔트리 저장
+
+
         // 5. 결과 반환
         return new PaymentConfirmationResult(paymentExecutionResult.paymentStatus(), paymentExecutionResult.getFailure());
+    }
+
+    private void getUpdatedWallets(Map<Long, List<PaymentOrder>> paymentOrdersBySellerId) {
+        Set<Long> sellerIds = paymentOrdersBySellerId.keySet();
+
+        // 지갑 가져오기
+        List<Wallet> wallets = walletRepository.findByUserIds(sellerIds);
+        System.out.println("wallets = " + wallets.size());
+
+        // 지갑 업데이트 후 WalletTransaction 저장
+        wallets.forEach(wallet -> {
+            // calculateBalanceWith 호출 후 반환된 WalletTransaction 저장
+            List<WalletTransaction> transactions =
+                    wallet.calculateBalanceWith(paymentOrdersBySellerId.get(wallet.getUserId()));
+
+            // WalletTransaction 저장
+            walletTransactionRepository.saveAll(transactions);
+        });
     }
 
     private boolean updatePaymentStatus(PaymentStatusUpdateCommand command) {
@@ -196,7 +242,6 @@ public class PaymentConfirmService {
                         PaymentStatus.EXECUTING.name().equals(pair.getValue()))
                 .collect(Collectors.toList());
     }
-
     private void isValid(int findAmount, int requestAmount, String orderId) {
         if (findAmount != requestAmount) {
             throw new PaymentValidationException(String.format("결제 (orderId: %s) 에서 금액 (amount: %d) 이 올바르지 않습니다.", orderId, findAmount));

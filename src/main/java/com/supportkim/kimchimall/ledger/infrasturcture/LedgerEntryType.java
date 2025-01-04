@@ -1,4 +1,5 @@
 package com.supportkim.kimchimall.ledger.infrasturcture;
 
-public class PaymentEntity {
+public enum LedgerEntryType {
+    CREDIT , DEBIT
 }
