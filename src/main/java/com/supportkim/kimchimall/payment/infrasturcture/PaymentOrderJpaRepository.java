@@ -1,6 +1,8 @@
 package com.supportkim.kimchimall.payment.infrasturcture;
 
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -13,6 +15,10 @@ public interface PaymentOrderJpaRepository extends JpaRepository<PaymentOrder , 
     List<Object[]> findPaymentOrderStatusByOrderId(String orderId);
 
     List<PaymentOrder> findByOrderId(String orderId);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT p FROM PaymentOrder p WHERE p.orderId = :orderId")
+    List<PaymentOrder> findByOrderIdWithLock(@Param("orderId") String orderId);
 
     @Query("SELECT SUM(p.amount) FROM PaymentOrder p WHERE p.orderId = :orderId")
     Integer findTotalAmountByOrderId(@Param("orderId") String orderId);

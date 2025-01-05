@@ -6,8 +6,7 @@ import com.supportkim.kimchimall.common.exception.PaymentAlreadyProcessedExcepti
 import com.supportkim.kimchimall.common.exception.PaymentValidationException;
 import com.supportkim.kimchimall.common.util.Pair;
 import com.supportkim.kimchimall.ledger.infrasturcture.*;
-import com.supportkim.kimchimall.member.controller.port.MemberService;
-import com.supportkim.kimchimall.member.domain.Member;
+import com.supportkim.kimchimall.ledger.service.LedgerService;
 import com.supportkim.kimchimall.member.infrastructure.MemberEntity;
 import com.supportkim.kimchimall.member.infrastructure.MemberJpaRepository;
 import com.supportkim.kimchimall.payment.controller.request.TossPaymentConfirmTest;
@@ -19,13 +18,11 @@ import com.supportkim.kimchimall.wallet.infrasturcture.Wallet;
 import com.supportkim.kimchimall.wallet.infrasturcture.WalletJpaRepository;
 import com.supportkim.kimchimall.wallet.infrasturcture.WalletTransaction;
 import com.supportkim.kimchimall.wallet.infrasturcture.WalletTransactionJpaRepository;
+import com.supportkim.kimchimall.wallet.service.WalletService;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.dao.CannotAcquireLockException;
-import org.springframework.orm.ObjectOptimisticLockingFailureException;
-import org.springframework.retry.annotation.Backoff;
-import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -52,11 +49,127 @@ public class PaymentConfirmService {
     private final LedgerEntryJpaRepository ledgerEntryRepository;
     private final AccountJpaRepository accountRepository;
     private final MockTossPaymentExecutor mockTossPaymentExecutor;
-
     private final ApplicationEventPublisher eventPublisher;
-
     private final PaymentEventPublisher paymentEventPublisher;
+    private final WalletService walletService;
+    private final LedgerService ledgerService;
+    private final EntityManager em;
+    @Transactional
+    public PaymentConfirmationResult confirmTransactional(PaymentConfirmCommand command) {
+        // 1. 결제 상태를 EXECUTING 업데이트
+        PaymentEvent paymentEvent = paymentEventRepository.findByOrderId(command.getOrderId())
+                .orElseThrow(() -> new BaseException(ErrorCode.NOT_FOUND_PAYMENT_EVENT));
 
+        List<Pair<Long, String>> result = checkPreviousPaymentOrderStatus(paymentEvent.getOrderId());
+
+        // 엔터티 리스트 생성
+        List<PaymentOrderHistory> paymentHistories = result.stream()
+                .map(pair -> PaymentOrderHistory.builder()
+                        .paymentOrderId(pair.getKey()) // Order ID
+                        .previousStatus(PaymentStatus.get(pair.getValue())) // 이전 상태
+                        .newStatus(PaymentStatus.EXECUTING) // 새로운 상태
+                        .reason("PAYMENT_CONFIRMATION_START") // 변경 이유
+                        .createdAt(LocalDateTime.now())
+                        .build())
+                .collect(Collectors.toList());
+
+        // 데이터 저장
+        paymentOrderHistoryRepository.saveAll(paymentHistories);
+
+        List<PaymentOrder> paymentOrders = paymentOrderRepository.findByOrderId(command.getOrderId());
+
+        paymentOrders.forEach(paymentOrder -> paymentOrder.updateOrderStatus(PaymentStatus.EXECUTING));
+
+        // PaymentEvent 에서 PaymentKey 업데이트 (TossAPI 에서 발급해준 Key)
+        paymentEvent.updatePaymentKey(command.getPaymentKey());
+
+
+        // 2. 결제 유효성 검증 (결제 금액을 비교하여 검증)
+        Integer amount = paymentOrderRepository.findTotalAmountByOrderId(command.getOrderId());
+        // 만약 문제가 있다면 예외 발생
+        isValid(amount, command.getAmount(), command.getOrderId());
+
+        // 3. 결제 실행
+        PaymentExecutionResult paymentExecutionResult = tossPaymentExecutor.execute(command);
+
+        // 4. 결제 상태 업데이트
+        PaymentStatusUpdateCommand paymentStatusUpdateCommand = PaymentStatusUpdateCommand.from(paymentExecutionResult);
+        updatePaymentStatus(paymentStatusUpdateCommand);
+
+        try {
+            walletService.walletProcess(command);
+            ledgerService.ledgerProcess(command);
+        } catch (BaseException e) {
+            log.error("processing failed: {}", e.getMessage());
+            // 필요한 추가 처리
+        }
+
+        // 모든 업데이트가 끝났다면 paymentEvent 도 Update
+        paymentEvent.confirmPaymentDone();
+
+        // 5. 결과 반환
+        return new PaymentConfirmationResult(paymentExecutionResult.paymentStatus(), paymentExecutionResult.getFailure());
+    }
+
+    @Transactional
+    public PaymentConfirmationResult testConfirmTransactional(TossPaymentConfirmTest command) {
+        // 1. 결제 상태를 EXECUTING 업데이트
+        PaymentEvent paymentEvent = paymentEventRepository.findByOrderId(command.getOrderId())
+                .orElseThrow(() -> new BaseException(ErrorCode.NOT_FOUND_PAYMENT_EVENT));
+
+        List<Pair<Long, String>> result = checkPreviousPaymentOrderStatus(paymentEvent.getOrderId());
+
+        // 엔터티 리스트 생성
+        List<PaymentOrderHistory> paymentHistories = result.stream()
+                .map(pair -> PaymentOrderHistory.builder()
+                        .paymentOrderId(pair.getKey()) // Order ID
+                        .previousStatus(PaymentStatus.get(pair.getValue())) // 이전 상태
+                        .newStatus(PaymentStatus.EXECUTING) // 새로운 상태
+                        .reason("PAYMENT_CONFIRMATION_START") // 변경 이유
+                        .createdAt(LocalDateTime.now())
+                        .build())
+                .collect(Collectors.toList());
+
+        // 데이터 저장
+        paymentOrderHistoryRepository.saveAll(paymentHistories);
+
+        List<PaymentOrder> paymentOrders = paymentOrderRepository.findByOrderId(command.getOrderId());
+
+        paymentOrders.forEach(paymentOrder -> paymentOrder.updateOrderStatus(PaymentStatus.EXECUTING));
+
+        // PaymentEvent 에서 PaymentKey 업데이트 (TossAPI 에서 발급해준 Key)
+        paymentEvent.updatePaymentKey(command.getPaymentKey());
+
+
+        // 2. 결제 유효성 검증 (결제 금액을 비교하여 검증)
+        Integer amount = paymentOrderRepository.findTotalAmountByOrderId(command.getOrderId());
+        // 만약 문제가 있다면 예외 발생
+        isValid(amount, command.getAmount(), command.getOrderId());
+
+        // 3. 결제 실행
+        PaymentExecutionResult paymentExecutionResult = mockTossPaymentExecutor.execute(command);
+
+        // 4. 결제 상태 업데이트
+        PaymentStatusUpdateCommand paymentStatusUpdateCommand = PaymentStatusUpdateCommand.from(paymentExecutionResult);
+        updatePaymentStatus(paymentStatusUpdateCommand);
+
+        // Version 을 맞추기 위한 flush
+        em.flush();
+
+        try {
+            walletService.testWalletProcess(command);
+            ledgerService.testLedgerProcess(command);
+        } catch (BaseException e) {
+            log.error("processing failed: {}", e.getMessage());
+            // 필요한 추가 처리
+        }
+
+        // 모든 업데이트가 끝났다면 paymentEvent 도 Update
+        paymentEvent.confirmPaymentDone();
+
+        // 5. 결과 반환
+        return new PaymentConfirmationResult(paymentExecutionResult.paymentStatus(), paymentExecutionResult.getFailure());
+    }
 
     @Transactional
     public PaymentConfirmationResult testConfirmKafka(TossPaymentConfirmTest command) {

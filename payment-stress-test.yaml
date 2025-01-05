@@ -33,7 +33,7 @@ scenarios:
               as: "orderId"
 
       - post:
-          url: "/test/confirm-kafka"
+          url: "/test/confirm-transactional"
           json:
             paymentKey: "{{ faker.random.uuid }}"
             orderId: "{{ orderId }}"

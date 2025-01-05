@@ -44,6 +44,9 @@ public class PaymentOrder {
     @Column(nullable = false)
     private boolean isWalletUpdated = false;
 
+    @Version
+    private int version;
+
     public static PaymentOrder of(Long sellerId, String idempotencyKey, Long kimchiId, int price, PaymentStatus status) {
         return PaymentOrder.builder()
                 .sellerId(sellerId)

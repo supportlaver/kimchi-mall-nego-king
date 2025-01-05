@@ -27,6 +27,12 @@ public class TossPaymentTestController {
         return ResponseEntity.ok().body(new BaseResponse<>(paymentConfirmService.testConfirm(command)));
     }
 
+    @PostMapping("/confirm-transactional")
+    public ResponseEntity<BaseResponse<PaymentConfirmationResult>> testConfirmTransactional(@RequestBody TossPaymentConfirmTest request) {
+        TossPaymentConfirmTest command = TossPaymentConfirmTest.from(request);
+        return ResponseEntity.ok().body(new BaseResponse<>(paymentConfirmService.testConfirmTransactional(command)));
+    }
+
     @PostMapping("/confirm-eda")
     public ResponseEntity<BaseResponse<PaymentConfirmationResult>> testConfirmEDA(@RequestBody TossPaymentConfirmTest request) {
         TossPaymentConfirmTest command = TossPaymentConfirmTest.from(request);

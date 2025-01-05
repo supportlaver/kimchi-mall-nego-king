@@ -23,7 +23,7 @@ import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
-public class LedgerService {
+public class LedgerServiceForKafka {
 
     private final StreamBridge streamBridge;
     private final PaymentOrderJpaRepository paymentOrderRepository;
