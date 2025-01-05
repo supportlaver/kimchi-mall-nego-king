@@ -88,6 +88,8 @@ dependencies {
 	implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
 
 	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+
+	implementation 'com.github.ben-manes.caffeine:caffeine:3.1.6'
 }
 
 dependencyManagement {

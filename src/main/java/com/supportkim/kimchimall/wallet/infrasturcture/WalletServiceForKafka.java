@@ -2,11 +2,13 @@ package com.supportkim.kimchimall.wallet.infrasturcture;
 
 import com.supportkim.kimchimall.common.exception.BaseException;
 import com.supportkim.kimchimall.common.exception.ErrorCode;
+import com.supportkim.kimchimall.ledger.infrasturcture.event.LedgerCompleteEventMessage;
 import com.supportkim.kimchimall.payment.infrasturcture.PaymentOrder;
 import com.supportkim.kimchimall.payment.infrasturcture.PaymentOrderJpaRepository;
 import com.supportkim.kimchimall.payment.service.event.PaymentEventMessage;
 import com.supportkim.kimchimall.wallet.infrasturcture.event.WalletCompleteEventMessage;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -17,14 +19,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-@Service
+@Service @Slf4j
 @RequiredArgsConstructor
 public class WalletServiceForKafka {
 
     private final PaymentOrderJpaRepository paymentOrderRepository;
     private final WalletTransactionJpaRepository walletTransactionRepository;
     private final WalletJpaRepository walletRepository;
-    private final ApplicationEventPublisher eventPublisher;
+    private final StreamBridge streamBridge;
     @Transactional
     public void processWalletEvent(PaymentEventMessage event) {
         if (walletTransactionRepository.existsByOrderId(event.getOrderId())) {
@@ -55,7 +57,9 @@ public class WalletServiceForKafka {
         // 지갑 업데이트가 성공적으로 끝났다면 Update
         paymentOrders.forEach(PaymentOrder::confirmWalletUpdate);
 
-        eventPublisher.publishEvent(new WalletCompleteEventMessage(event.getOrderId()));
+        log.info("JIWON : wallet 로직 모두 수행 후 완료 event 전달");
+
+        streamBridge.send("wallet-result", new LedgerCompleteEventMessage(event.getOrderId()));
     }
 
     private void getUpdatedWallets(Map<Long, List<PaymentOrder>> paymentOrdersBySellerId) {

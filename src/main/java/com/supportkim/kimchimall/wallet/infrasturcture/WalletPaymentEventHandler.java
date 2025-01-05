@@ -14,6 +14,9 @@ public class WalletPaymentEventHandler {
     private final WalletServiceForKafka walletServiceForKafka;
     @Bean
     public Consumer<PaymentEventMessage> wallet() {
-        return walletServiceForKafka::processWalletEvent;
+        return paymentEventMessage -> {
+            log.info("JIWON : Wallet 에서 메시지 소비  = {} " , paymentEventMessage.getOrderId());
+            walletServiceForKafka.processWalletEvent(paymentEventMessage);
+        };
     }
 }

@@ -28,24 +28,16 @@ import java.util.stream.Stream;
 @RequiredArgsConstructor
 public class PaymentEventHandler {
 
-    private final PaymentEventJpaRepository paymentEventRepository;
+    private final PaymentEventService paymentEventService;
     @Bean
-    @Transactional
     public Consumer<WalletCompleteEventMessage> walletResult() {
-        return event -> {
-            PaymentEvent paymentEvent = paymentEventRepository.findWithOrdersByOrderId(event.getOrderId())
-                    .orElseThrow(() -> new BaseException(ErrorCode.NOT_FOUND_PAYMENT_EVENT));
-            paymentEvent.completeIfDone();
-        };
+        log.info("PaymentEventHandler.walletResult");
+        return paymentEventService::handleWalletCompleteEvent;
     }
 
     @Bean
-    @Transactional
     public Consumer<LedgerCompleteEventMessage> ledgerResult() {
-        return event -> {
-            PaymentEvent paymentEvent = paymentEventRepository.findWithOrdersByOrderId(event.getOrderId())
-                    .orElseThrow(() -> new BaseException(ErrorCode.NOT_FOUND_PAYMENT_EVENT));
-            paymentEvent.completeIfDone();
-        };
+        log.info("PaymentEventHandler.ledgerResult");
+        return paymentEventService::handleLedgerCompleteEvent;
     }
 }

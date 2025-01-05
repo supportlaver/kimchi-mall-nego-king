@@ -112,7 +112,7 @@ public class PaymentConfirmService {
     }
 
     @Transactional
-    public PaymentConfirmationResult testConfirmTransactional(TossPaymentConfirmTest command) {
+    public synchronized PaymentConfirmationResult testConfirmTransactional(TossPaymentConfirmTest command) {
         // 1. 결제 상태를 EXECUTING 업데이트
         PaymentEvent paymentEvent = paymentEventRepository.findByOrderId(command.getOrderId())
                 .orElseThrow(() -> new BaseException(ErrorCode.NOT_FOUND_PAYMENT_EVENT));
@@ -153,7 +153,6 @@ public class PaymentConfirmService {
         PaymentStatusUpdateCommand paymentStatusUpdateCommand = PaymentStatusUpdateCommand.from(paymentExecutionResult);
         updatePaymentStatus(paymentStatusUpdateCommand);
 
-        // Version 을 맞추기 위한 flush
         em.flush();
 
         try {

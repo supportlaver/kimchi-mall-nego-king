@@ -4,6 +4,7 @@ import com.supportkim.kimchimall.cart.domain.Cart;
 import com.supportkim.kimchimall.cart.service.port.CartRepository;
 import com.supportkim.kimchimall.common.exception.BaseException;
 import com.supportkim.kimchimall.common.exception.ErrorCode;
+import com.supportkim.kimchimall.common.exception.NaverShoppingApiConnectionRefusedException;
 import com.supportkim.kimchimall.common.security.jwt.JwtService;
 import com.supportkim.kimchimall.kimchi.controller.port.FindLowestPriceService;
 import com.supportkim.kimchimall.kimchi.controller.port.KimchiService;
@@ -25,6 +26,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.Builder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
@@ -82,22 +84,27 @@ public class KimchiServiceImpl implements KimchiService {
     @Override
     @CircuitBreaker(name = NAVER_OPEN_API_CIRCUIT_BREAKER_CONFIG , fallbackMethod = "fallback")
     public FindLowestPriceResponseDto getFindLowestPrice(String type , String sort , int display , int start) {
-        FindLowestPriceResponseDto findLowestPriceKimchis = findLowestPriceService.getFindLowestPriceKimchis(type, sort, display, start);
-        // 캐시 저장
-        lowestPriceKimchiCacheRepository.setLowestPriceKimchiCache(findLowestPriceKimchis.getItems(),type);
-        return findLowestPriceKimchis;
+        return findLowestPriceService.getFindLowestPriceKimchis(type, sort, display, start);
     }
 
     /**
      * fallback Method 는 CircuitBreaker 에서 지정한 메서드의 시그니처가 동일해야한다.
      * 반환값 , 파라미터가 동일해야하며 추가로 Exception 인자까지 가지고 있어야한다.
      */
+    public FindLowestPriceResponseDto fallback(String type , String sort , int display , int start, NaverShoppingApiConnectionRefusedException ex) {
+        log.info("네이버 API 에러 -> 캐시된 데이터로 반환");
+        // List<ItemDto> cacheList = lowestPriceKimchiCacheRepository.getLowestPriceKimchiCache(type);
+        List<ItemDto> cacheList = lowestPriceKimchiCacheRepository.getLowestPriceKimchiCache("B");
+        // 로그는 DB 에 저장 예정
+        log.info("fallback-> CallNotPermittedException : {}" , ex.getMessage());
+        log.info("fallback-> CallNotPermittedException : {}" , ex.getStackTrace());
+        return FindLowestPriceResponseDto.from(cacheList, display, start);
+    }
     public FindLowestPriceResponseDto fallback(String type , String sort , int display , int start,CallNotPermittedException ex) {
         log.info("현재 Naver API 에 문제가 있습니다. 잠시후에 다시 시도해주세요.");
         // 캐시된 상품을 노출
         List<ItemDto> cacheList = lowestPriceKimchiCacheRepository.getLowestPriceKimchiCache(type);
 
-        // 로그는 DB 에 저장 예정
         log.info("fallback-> CallNotPermittedException : {}" , ex.getMessage());
         log.info("fallback-> CallNotPermittedException : {}" , ex.getStackTrace());
 

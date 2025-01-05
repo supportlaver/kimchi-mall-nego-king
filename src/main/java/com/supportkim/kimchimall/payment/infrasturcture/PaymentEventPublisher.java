@@ -24,6 +24,7 @@ public class PaymentEventPublisher {
     }
 
     public void publishToPaymentTopic(PaymentEventMessage event) {
+        log.info("JIWON : PaymentTopic 에 event 전달 = {} " , event.getOrderId());
         sink.tryEmitNext(event);
     }
 }
