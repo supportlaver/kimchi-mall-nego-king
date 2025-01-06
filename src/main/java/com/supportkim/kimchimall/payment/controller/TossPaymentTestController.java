@@ -5,6 +5,7 @@ import com.supportkim.kimchimall.payment.controller.request.TossPaymentConfirmRe
 import com.supportkim.kimchimall.payment.controller.request.TossPaymentConfirmTest;
 import com.supportkim.kimchimall.payment.controller.response.PaymentConfirmationResult;
 import com.supportkim.kimchimall.payment.service.PaymentConfirmService;
+import com.supportkim.kimchimall.payment.service.PaymentConfirmTestService;
 import com.supportkim.kimchimall.payment.service.dto.PaymentConfirmCommand;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,30 +20,30 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class TossPaymentTestController {
 
-    private final PaymentConfirmService paymentConfirmService;
+    private final PaymentConfirmTestService paymentConfirmTestService;
 
     @PostMapping("/confirm")
     public ResponseEntity<BaseResponse<PaymentConfirmationResult>> testConfirm(@RequestBody TossPaymentConfirmTest request) {
         TossPaymentConfirmTest command = TossPaymentConfirmTest.from(request);
-        return ResponseEntity.ok().body(new BaseResponse<>(paymentConfirmService.testConfirm(command)));
+        return ResponseEntity.ok().body(new BaseResponse<>(paymentConfirmTestService.testConfirm(command)));
     }
 
     @PostMapping("/confirm-transactional")
     public ResponseEntity<BaseResponse<PaymentConfirmationResult>> testConfirmTransactional(@RequestBody TossPaymentConfirmTest request) {
         TossPaymentConfirmTest command = TossPaymentConfirmTest.from(request);
-        return ResponseEntity.ok().body(new BaseResponse<>(paymentConfirmService.testConfirmTransactional(command)));
+        return ResponseEntity.ok().body(new BaseResponse<>(paymentConfirmTestService.testConfirmTransactional(command)));
     }
 
     @PostMapping("/confirm-eda")
     public ResponseEntity<BaseResponse<PaymentConfirmationResult>> testConfirmEDA(@RequestBody TossPaymentConfirmTest request) {
         TossPaymentConfirmTest command = TossPaymentConfirmTest.from(request);
-        return ResponseEntity.ok().body(new BaseResponse<>(paymentConfirmService.testConfirmEDA(command)));
+        return ResponseEntity.ok().body(new BaseResponse<>(paymentConfirmTestService.testConfirmEDA(command)));
     }
 
     @PostMapping("/confirm-kafka")
     public ResponseEntity<BaseResponse<PaymentConfirmationResult>> testConfirmKafka(@RequestBody TossPaymentConfirmTest request) {
         TossPaymentConfirmTest command = TossPaymentConfirmTest.from(request);
-        return ResponseEntity.ok().body(new BaseResponse<>(paymentConfirmService.testConfirmKafka(command)));
+        return ResponseEntity.ok().body(new BaseResponse<>(paymentConfirmTestService.testConfirmKafka(command)));
     }
 
 }

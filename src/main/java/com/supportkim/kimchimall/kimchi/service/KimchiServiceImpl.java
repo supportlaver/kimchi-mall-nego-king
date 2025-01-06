@@ -54,7 +54,6 @@ public class KimchiServiceImpl implements KimchiService {
 
     @Override
     public void putKimchiInCart(PutCart putCartDto , HttpServletRequest request) {
-
         Member member = findMemberFromAccessToken(request);
         Cart memberCart = member.getCart();
     }
