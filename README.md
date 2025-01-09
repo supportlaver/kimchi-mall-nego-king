@@ -95,19 +95,44 @@
     
 ---
 
-  #### 3️⃣ 주문 및 결제 성능 개선 - <ins>동시성 제어 및 응답속도 94.32% 개선</ins>
+  #### 3️⃣ 주문 및 결제 성능 개선 - <ins>응답속도 31.6% 개선</ins>
 
 </br>  
 
   **문제 상황**
-  - 네고왕 이벤트 시 높은 TPS가 예상되었고, TPS 50인 상황에서 평균 응답 시간이 6초로 증가해 사용자 만족도와 서비스 품질에 부정적인 영향을 미칠 가능성을 확인.
-  - 모니터링 결과 웹서버(Tomcat) 에서 병목이 일어나는 것을 확인했고 이를 해결하기 위해 Tomcat Thread 튜닝을 결정
+  - 네고왕 이벤트 시 높은 TPS가 예상되었고, TPS 30인 상황에서 평균 응답 시간이 약 7초까지 증가해 사용자 만족도와 서비스 품질에 부정적인 영향을 미칠 가능성을 확인.
+  - 이를 해결하기 위해 추가 비용이 들지 않고 설정 변경 만으로도 쉽게 구현이 가능한 Thread 튜닝으로 최적화를 하기로 결정
+  - Tomcat Thread , HikariCP Thread 수를 튜닝하면서 자원 활용도를 최적화
 
 </br>  
 
-  **첫 번째 문제 해결**
-  - 부하 테스트를 통해 각 TPS 별로 최적의 Tomcat Thread 설정을 찾기
-    
+  **문제 해결(TPS 20 환경)**
+  - 처음에 Tomcat , HikariCP 쓰레드 튜닝을 하지 않고 TPS 20 환경에서 부하테스트를 하면서 모니터링을 한 결과 기본 Tomcat Thread Pool 사용량이 매우 낮은것을 파악하여 기본값이 200개인 Thread 를 낮춰서 자원을 아끼기로 함
+  - Tomcat Thread Max 개수를 튜닝하고 성능 테스트를 하면서 최적의 Thread 개수를 찾음
+
+  </br>  
+
+  **성능 테스트 결과**
+  </br>  
+  <img width="718" alt="스크린샷 2025-01-10 오전 12 30 35" src="https://github.com/user-attachments/assets/02f53bae-c1d6-487c-a496-16b80ec3bed4" />
+
+  </br>  
+
+  **문제 해결(TPS 30 환경)**
+  - 똑같이 처음에는 Tomcat , HikariCP 쓰레드 튜닝을 하지 않고 TPS 30 환경에서 부하테스트를 하면서 모니터링을 한 결과 기본 Tomcat Thread Pool 사용량은 80% 로 적당하지만 HikariCP 에서 대기 요청 하는 Thread 수가 많아지는 것을 확인
+  - 그래서 HikariCP 의 maximum-pool-size 를 늘려가면서 부하 테스트를 진행하여 최적의 maximum-pool-size 개수를 찾음
+
+  </br>  
+  
+  **성능 테스트 결과**
+  </br>  
+  <img width="635" alt="스크린샷 2025-01-10 오전 12 25 36" src="https://github.com/user-attachments/assets/92c1580d-82eb-490d-9e1e-1f94d2ce8f21" />
+
+  </br>  
+
+  **결론**
+  - HikariCP와 Tomcat의 쓰레드 풀을 최적화할 때, 과도한 쓰레드 수로 지정하게 되면 컨텍스트 스위칭 비용도 증가하고 시스템 자원을 과도하게 소모하여 오히려 응답 속도가 느려짐
+  - I/O-바운드 작업을 고려하여 CPU 코어 수를 초과하는 스레드 생성 및 성능 테스트를 통해 최적의 스레드 수 찾아야 함
 
 ---
 
@@ -136,7 +161,7 @@
 
   </br>
 
-  **첫 번째 문제 해결 방식의 문제 상황**
+  **첫 번째 문제 해결 방식 중 발생한 이슈**
   - @Transactional 전파 옵션을 사용했지만 MySQLTransactionRollbackException(Lock wait timeout exceeded) 발생
   - 발생한 예외는 주로 트랜잭션이 너무 오래 걸리거나 동시에 너무 많은 트랜잭션이 동일한 리소스를 잠그려고 할 때 발생
   
@@ -157,7 +182,7 @@
   - 변경사항이 바로 DB 에 반영이 되기 때문에 Lock 문제가 없을거라고 판단
 
   </br> </br>
-  **두 번째 문제 해결 방식의 문제 상황**
+  **두 번째 문제 해결 방식 중 발생한 이슈**
   - EntityManager.flush() 를 사용했지만 똑같이 MySQLTransactionRollbackException(Lock wait timeout exceeded) 발생
   
   ![스크린샷 2025-01-06 오후 9 35 26](https://github.com/user-attachments/assets/469cd977-b43a-463b-a443-6ec934b5a77a)
@@ -190,7 +215,6 @@
   **결과**
 
   ![스크린샷 2025-01-06 오후 10 04 01](https://github.com/user-attachments/assets/af6dab61-ad56-4204-81b5-09788e1e9dc8)
-
   - Kafka 를 사용한 EDA 로 전환함으로써 TPS 250 기준 평균 응답 속도 8.8초 -> 0.5초로 개선
 
 ---
