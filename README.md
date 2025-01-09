@@ -234,6 +234,56 @@
   - Resilience4j 를 사용하여 서킷브레이크 패턴을 적용
   - 하루에 한 번 Redis 에 각 김치 종류(배추김치 , 열무 , 깍두기 , 파김치)에 해당하는 최저가 김치들을 Redis 에 캐싱 해놓고, Naver Open API 에 문제가 발생했을 시 캐시된 데이터를 보여주도록 설계
 
+  **서킷브레이크 패턴에서 사용한 설정**
+  ```yaml
+  resilience4j.circuitbreaker:
+  configs:
+    default:
+      slidingWindowType: COUNT_BASED
+      minimumNumberOfCalls: 7
+      slidingWindowSize: 10
+      waitDurationInOpenState: 10s
+      failureRateThreshold: 40
+      slowCallDurationThreshold: 3000
+      slowCallRateThreshold: 60
+      permittedNumberOfCallsInHalfOpenState: 5
+      automaticTransitionFromOpenToHalfOpenEnabled: true
+  ```
+  1. slidingWindowType: COUNT_BASED
+     - COUNT_BASED 는 요청 수가 적을 때도 명확히 동작하기 때문에 COUNT_BASED 로 설정
+    
+  2. minimumNumberOfCalls: 7
+     - 서킷브레이커가 작동하기 위해 최소 7번의 호출이 필요하도록 설정
+     - 너무 적은 숫자로 하게 되면 실패율 계산에 왜곡이 될 수 있기 때문에 최소 7번 이상의 호출 데이터를 기반으로 실패 여부를 판단하도록 하기 위해 7 로 설정
+  3. slidingWindowSize: 10
+     - 서킷브레이커가 최근 10번의 호출을 기준으로 실패율을 계산하도록 설정
+     - 최근 호출 데이터만 고려하기 때문에 동적으로 변화하는 상태에 빠르게 반응할 수 있고, 슬라이딩 윈도우 크기가 너무 크면 반응이 느려지고, 너무 작으면 신뢰가 떨어지기 때문에 10 으로 설정
+
+  4. waitDurationInOpenState: 10s
+     - 서킷이 열려 있는 상태에서 10초 동안 요청을 차단하도록 설정
+     - 너무 짧으면 서버에 불필요한 요청이 유입되고, 너무 길면 복구된 서비스에 대해 빠르게 반응하지 않기 떄문에 10s 로 지정
+    
+  5. failureRateThreshold: 40
+     - 실패율이 40% 를 초과하면 서킷브레이커가 열리도록 설정
+     - 지나치게 낮은 임계값은 정상적인 동작에도 서킷이 열릴 수 있기 때문에 지나치게 낮지 않으면서도 문제가 감지 됐을 때 빠르게 대응할 수 있는 40% 로 지정
+
+  6. slowCallDurationThreshold: 3000
+     - 3초 이상 걸리는 호출을 "느린 호출" 로 간주하도록 설정
+     - 지나치게 짧게 설정하면 느린 호출의 기준이 너무 민감해지고, 너무 길면 성능 문제를 감지하지 못 할 수 있기 때문에 3초로 지정
+       
+  7. slowCallRateThreshold: 60
+     - "느린 호출" 비율이 60% 를 초과하면 서킷브레이커가 열리도록 설정
+     - 느린 호출이 전체 호출의 과반수를 초과하면 성능 문제가 발생했음을 나타나기 때문에 50% 로 지정
+
+  8. permittedNumberOfCallsInHalfOpenState: 5
+     - 서킷브레이커가 Half-Open 상태일 때 최대 5번의 호출을 허용하도록 설정
+     - 호출 수가 너무 많으면 복구를 확인하기 전에 과부하가 발생할 수 있고, 너무 적으면 복구 여부 판단이 어렵기 때문에 5번으로 설정
+
+  9. automaticTransitionFromOpenToHalfOpenEnabled: true
+      - 서킷브레이커가 Open 상태에서 자동으로 Half-Open 상태로 전환하도록 설정
+      - 자동 전환은 개발자의 수작업 개입을 줄이고, 시스템 복구를 빠르게 확인할 수 있는 장점이 있기 떄문에 true 로 지정
+  
+
 </br> 
 
   <img width="681" alt="스크린샷 2025-01-06 오후 10 52 54" src="https://github.com/user-attachments/assets/6c3ed922-8155-4e88-9e8e-5333509a2f00" />
