@@ -76,7 +76,8 @@
 </br>  
 
   **문제 상황을 그림으로 표현**
-  <img width="1449" alt="스크린샷 2025-01-07 오전 12 31 52" src="https://github.com/user-attachments/assets/5c5d78cc-067e-42e6-9b63-e8f4a075df8a" />
+<img width="1465" alt="스크린샷 2025-01-13 오후 8 16 08" src="https://github.com/user-attachments/assets/777b6711-067a-42ee-80c9-915e1cdd5c06" />
+
 
   
 
