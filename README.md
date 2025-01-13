@@ -70,7 +70,7 @@
   - 네고왕 이벤트를 대비하여 부하테스트를 진행할 때, 결제 API 테스트에서 DeadLock 이 발생하여 결제가 되지 않는 문제점을 확인
   - 문제 원인을 파악하기 위해 MySQL InnoDB Log 를 확인
   - 결제 완료 시 PaymentOrder 상태를 EXECUTING -> SUCCESS 로 변환하는 로직이 있고, 이 상태를 변경하기 위해 order_id 를 사용하여 update 쿼리를 사용
-  - InnoDB 는 Update 쿼리에도 Lock 을 걸게 되는데 where 에 오는 컬럼이 인덱스가 아니라면 모든 행을 확인해야하는데, 이때 Full Text Scan 이 일어나면서 모든 행을 잠금
+  - InnoDB 는 Update 쿼리에도 Lock 을 걸게 되는데 where 에 오는 컬럼이 인덱스가 아니라면 모든 행을 확인해야하는데, 이때 Full Table Scan 이 일어나면서 모든 행을 잠금
   - 멀티스레드 환경에서는 이 InnoDB 동작 원리 때문에 Dead Lock 발생
 
 </br>  
