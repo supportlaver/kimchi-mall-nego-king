@@ -5,12 +5,10 @@ public enum FinanceType {
 
     private final String description;
 
-    // Constructor
     FinanceType(String description) {
         this.description = description;
     }
 
-    // Getter
     public String getDescription() {
         return description;
     }

@@ -29,7 +29,6 @@ import static com.supportkim.kimchimall.member.controller.response.MemberRespons
 @RequiredArgsConstructor
 public class CustomAuthenticationSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
-    // ObjectMapper 싱글톤으로 사용하도록 하는게 더 좋아보인다.
     private final JwtService jwtService;
     private final MemberRepository memberRepository;
     private final MemberCacheRepository cacheRepository;
@@ -49,11 +48,8 @@ public class CustomAuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         Cart savedCart = cartRepository.save(cart);
         member.settingCart(savedCart);
         memberRepository.saveForLogin(member);
-        // TODO: 9/9/24 프론트와 연결하게 되면 로컬 스토리지에 상품이 있다면 Cart 에 옮기는 작업이 필요합니다.
 
         MemberLoginResponse loginResponse = MemberLoginResponse.from(member, token);
-        // Cache 에 저장
-
         cacheRepository.setMember(member);
 
         ObjectMapper om = SingletonObjectMapper.getInstance();

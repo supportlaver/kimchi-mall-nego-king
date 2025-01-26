@@ -36,28 +36,20 @@ public class WalletServiceForKafka {
         List<PaymentOrder> paymentOrders = paymentOrderRepository.findByOrderId(event.getOrderId());
         Map<Long, List<PaymentOrder>> paymentOrdersBySellerId = paymentOrders.stream()
                 .collect(Collectors.groupingBy(PaymentOrder::getSellerId));
-        // 5-4) 지갑 업데이트
+
         getUpdatedWallets(paymentOrdersBySellerId);
         Set<Long> sellerIds = paymentOrdersBySellerId.keySet();
 
-        // 지갑 가져오기
         List<Wallet> wallets = walletRepository.findByUserIdsWithLock(sellerIds);
 
-
-        // 지갑 업데이트 후 WalletTransaction 저장
         wallets.forEach(wallet -> {
-            // calculateBalanceWith 호출 후 반환된 WalletTransaction 저장
             List<WalletTransaction> transactions =
                     wallet.calculateBalanceWith(paymentOrdersBySellerId.get(wallet.getUserId()));
 
-            // WalletTransaction 저장
             walletTransactionRepository.saveAll(transactions);
         });
 
-        // 지갑 업데이트가 성공적으로 끝났다면 Update
         paymentOrders.forEach(PaymentOrder::confirmWalletUpdate);
-
-        log.info("JIWON : wallet 로직 모두 수행 후 완료 event 전달");
 
         streamBridge.send("wallet-result", new LedgerCompleteEventMessage(event.getOrderId()));
     }
@@ -65,17 +57,11 @@ public class WalletServiceForKafka {
     private void getUpdatedWallets(Map<Long, List<PaymentOrder>> paymentOrdersBySellerId) {
         Set<Long> sellerIds = paymentOrdersBySellerId.keySet();
 
-        // 지갑 가져오기
         List<Wallet> wallets = walletRepository.findByUserIdsWithLock(sellerIds);
-        System.out.println("wallets = " + wallets.size());
 
-        // 지갑 업데이트 후 WalletTransaction 저장
         wallets.forEach(wallet -> {
-            // calculateBalanceWith 호출 후 반환된 WalletTransaction 저장
             List<WalletTransaction> transactions =
                     wallet.calculateBalanceWith(paymentOrdersBySellerId.get(wallet.getUserId()));
-
-            // WalletTransaction 저장
             walletTransactionRepository.saveAll(transactions);
         });
     }

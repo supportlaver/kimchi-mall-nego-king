@@ -13,8 +13,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public class OrderResponseDto {
-
-    // 결제 로직 추가 전
     @Getter @Builder
     @NoArgsConstructor @AllArgsConstructor
     public static class OrderResponse {
@@ -38,10 +36,6 @@ public class OrderResponseDto {
                     .build();
         }
     }
-
-
-
-    // 결제 로직 추가 후
     @Getter @Builder
     @NoArgsConstructor @AllArgsConstructor
     public static class CheckoutResponse {

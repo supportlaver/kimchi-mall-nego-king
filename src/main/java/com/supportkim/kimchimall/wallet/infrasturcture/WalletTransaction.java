@@ -48,7 +48,4 @@ public class WalletTransaction {
                 .orderId(orderId)
                 .build();
     }
-
-
-
 }

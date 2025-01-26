@@ -26,7 +26,7 @@ public class CheckoutViewController {
     public String checkoutPage(CheckoutRequest request,Model model) {
         CheckoutCommand command = CheckoutCommand.from(request);
         CheckoutResponse it = checkoutService.checkout(command);
-        // Model에 데이터를 추가합니다.
+
         model.addAttribute("orderId", it.getOrderId());
         model.addAttribute("orderName", it.getOrderName());
         model.addAttribute("amount", it.getAmount());

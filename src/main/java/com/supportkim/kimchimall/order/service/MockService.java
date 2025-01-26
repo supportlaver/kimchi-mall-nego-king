@@ -10,9 +10,6 @@ import org.springframework.stereotype.Service;
 @Service
 @Slf4j
 public class MockService {
-
-    // 결제 성공 : True
-    // 결제 실패 : False
     public boolean payment(Order order) {
         return true;
     }

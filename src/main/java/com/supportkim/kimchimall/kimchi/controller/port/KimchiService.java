@@ -19,6 +19,5 @@ public interface KimchiService {
     void putKimchiInCart(PutCart putCartDto , HttpServletRequest request);
     SingleKimchi getKimchi(String kimchiName);
 
-    // TODO: 1/3/25 Entity 와 Domain 분리 시키기
     List<KimchiEntity> getKimchis(List<Long> kimchiIds);
 }

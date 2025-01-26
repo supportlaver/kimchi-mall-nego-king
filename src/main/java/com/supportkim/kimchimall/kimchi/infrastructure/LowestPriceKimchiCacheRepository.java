@@ -22,7 +22,6 @@ public class LowestPriceKimchiCacheRepository {
     private static final Duration KIMCHI_CACHE_TTL = Duration.ofDays(3);
 
     public void setLowestPriceKimchiCache(List<ItemDto> kimchis, String type) {
-        // 데이터 저장
         kimchis.forEach(item -> {
             lowestPriceKimchiRedisTemplate.opsForList().rightPush(type, item);
         });
@@ -34,12 +33,7 @@ public class LowestPriceKimchiCacheRepository {
     }
 
     public void clear(String type) {
-        Boolean result = lowestPriceKimchiRedisTemplate.delete(type);
-        if (Boolean.TRUE.equals(result)) {
-            log.info("캐시 삭제 성공: {}", type);
-        } else {
-            log.warn("캐시 삭제 실패 또는 해당 키가 존재하지 않음: {}", type);
-        }
+        lowestPriceKimchiRedisTemplate.delete(type);
     }
 
     public void clearAll() {

@@ -22,7 +22,6 @@ public class MemberRepositoryImpl implements MemberRepository {
 
     @Override
     public Member saveForLogin(Member member) {
-        // member -> cart -> cartKimchi 까지 모두 가지고 와야한다.
         return memberJpaRepository.save(MemberEntity.fromForLogin(member)).toModelForLogin();
     }
 
@@ -47,9 +46,6 @@ public class MemberRepositoryImpl implements MemberRepository {
         MemberEntity member = memberJpaRepository.findByEmailWithCart(email);
         return Optional.ofNullable(member.toModelForLogin());
     }
-
-    // member 와 cart 를 한 번에 가지고 오는 메서드를 선언해서 가지고 와야한다.
-
 
     @Override
     public Optional<Member> findByName(String name) {

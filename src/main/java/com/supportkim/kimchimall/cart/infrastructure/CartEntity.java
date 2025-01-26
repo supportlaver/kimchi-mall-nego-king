@@ -43,8 +43,6 @@ public class CartEntity extends BaseEntity {
         return Cart.builder()
                 .id(id)
                 .cartKimchis(cartKimchiEntityList.stream().map(CartKimchiEntity::toModel).collect(toList()))
-//                .createdAt(this.getCreatedAt())
-//                .updatedAt(this.getUpdatedAt())
                 .build();
     }
 }

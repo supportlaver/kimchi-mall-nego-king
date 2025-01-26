@@ -86,38 +86,27 @@ public class KimchiServiceImpl implements KimchiService {
         return findLowestPriceService.getFindLowestPriceKimchis(type, sort, display, start);
     }
 
-    /**
-     * fallback Method 는 CircuitBreaker 에서 지정한 메서드의 시그니처가 동일해야한다.
-     * 반환값 , 파라미터가 동일해야하며 추가로 Exception 인자까지 가지고 있어야한다.
-     */
+
     public FindLowestPriceResponseDto fallback(String type , String sort , int display , int start, NaverShoppingApiConnectionRefusedException ex) {
         log.info("네이버 API 에러 -> 캐시된 데이터로 반환");
-        // List<ItemDto> cacheList = lowestPriceKimchiCacheRepository.getLowestPriceKimchiCache(type);
         List<ItemDto> cacheList = lowestPriceKimchiCacheRepository.getLowestPriceKimchiCache("B");
         // 로그는 DB 에 저장 예정
         log.info("fallback-> CallNotPermittedException : {}" , ex.getMessage());
-        log.info("fallback-> CallNotPermittedException : {}" , ex.getStackTrace());
         return FindLowestPriceResponseDto.from(cacheList, display, start);
     }
     public FindLowestPriceResponseDto fallback(String type , String sort , int display , int start,CallNotPermittedException ex) {
-        log.info("현재 Naver API 에 문제가 있습니다. 잠시후에 다시 시도해주세요.");
-        // 캐시된 상품을 노출
         List<ItemDto> cacheList = lowestPriceKimchiCacheRepository.getLowestPriceKimchiCache(type);
 
         log.info("fallback-> CallNotPermittedException : {}" , ex.getMessage());
-        log.info("fallback-> CallNotPermittedException : {}" , ex.getStackTrace());
 
         return FindLowestPriceResponseDto.from(cacheList, display, start);
     }
 
     public FindLowestPriceResponseDto fallback(String type , String sort , int display , int start,TooManyRequests ex) {
-        log.info("현재 사용자가 많아 요청 시간이 오래 걸리고 있습니다. 잠시후에 다시 시도해주세요");
         // 캐시한 상품을 노출
         List<ItemDto> cacheList = lowestPriceKimchiCacheRepository.getLowestPriceKimchiCache(type);
 
-        // 로그는 DB 에 저장 예정
         log.info("fallback-> NaverApiException : {}" , ex.getMessage());
-        log.info("fallback-> NaverAPiException : {}" , ex.getStackTrace());
 
         // Cache 된 상품을 반환한다.
         return FindLowestPriceResponseDto.from(cacheList, display, start);

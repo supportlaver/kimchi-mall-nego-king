@@ -9,9 +9,7 @@ import static com.supportkim.kimchimall.member.controller.response.MemberRespons
 public interface MemberService {
     MemberJoinResponse join(MemberJoinRequest memberJoinRequestDto);
     Member findById(Long id);
-    MemberLoginResponse login(MemberLoginRequest memberLoginRequestDto);
     Member findByLoginId(String loginId);
     Member findByName(String name);
     Member findByEmail(String email);
-    Member findByAccessToken(HttpServletRequest request);
 }

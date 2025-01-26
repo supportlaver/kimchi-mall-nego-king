@@ -16,11 +16,10 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addInterceptor(memberInterceptor)
                 .addPathPatterns("/**")
                 .excludePathPatterns(
-                        "/actuator/**",        // actuator 경로 제외
-                        "/api/join",           // 회원가입 경로 제외
-                        "/api/login",          // 로그인 경로 제외
-                        "/actuator/prometheus", // Prometheus 경로 제외
-                        "/error"               // 에러 경로 제외
+                        "/actuator/**",
+                        "/api/join",
+                        "/api/login",
+                        "/actuator/prometheus"
                 );
     }
 

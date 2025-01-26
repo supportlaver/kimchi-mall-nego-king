@@ -77,7 +77,6 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
                 .filter(jwtService::isTokenValid);
 
         if (refreshToken.isPresent()) {
-            // RefreshToken 은 잠시 넘기기
 
         } else {
             doNotSaveAuthentication(request , response);

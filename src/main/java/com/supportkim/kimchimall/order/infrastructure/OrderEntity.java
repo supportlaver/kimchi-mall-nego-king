@@ -33,9 +33,6 @@ public class OrderEntity extends BaseEntity {
     @Enumerated(STRING)
     private OrderStatus orderStatus;
 
-    //@OneToOne(fetch = LAZY)
-    //private DeliveryEntity delivery;
-
     @OneToMany(mappedBy = "order" , cascade = ALL)
     private List<OrderKimchiEntity> orderKimchis = new ArrayList<>();
 
@@ -44,17 +41,10 @@ public class OrderEntity extends BaseEntity {
     private MemberEntity member;
     private int totalPrice;
 
-    // List<Order> -> List<OrderEntity>
-    public static List<OrderEntity> fromList(List<Order> orders) {
-        return orders.stream().map(OrderEntity::from)
-                .collect(toList());
-    }
-
     public static OrderEntity from(Order order) {
         System.out.println("order123 : " + order);
         return OrderEntity.builder()
                 .member(MemberEntity.fromForJoin(order.getMember()))
-                // .delivery(DeliveryEntity.from(order.getDelivery()))
                 .orderStatus(order.getOrderStatus())
                 .totalPrice(order.getTotalPrice())
                 .orderKimchis(OrderKimchiEntity.fromList(order.getOrderKimchis()))
@@ -66,7 +56,6 @@ public class OrderEntity extends BaseEntity {
                 .orderStatus(orderStatus)
                 .member(member.toModel())
                 .totalPrice(totalPrice)
-                // .delivery(delivery.toModel())
                 .orderKimchis(orderKimchis.stream()
                         .map(OrderKimchiEntity::toModel)
                         .collect(toList()))

@@ -25,6 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -96,8 +97,13 @@ public class PaymentConfirmService {
         PaymentStatusUpdateCommand paymentStatusUpdateCommand = PaymentStatusUpdateCommand.from(paymentExecutionResult);
         updatePaymentStatus(paymentStatusUpdateCommand);
 
+        // 바로 커밋 시키기
+        paymentOrderRepository.flush();
+
         try {
             walletService.walletProcess(command);
+            log.info("walletService 끝");
+
             ledgerService.ledgerProcess(command);
         } catch (BaseException e) {
             log.error("processing failed: {}", e.getMessage());

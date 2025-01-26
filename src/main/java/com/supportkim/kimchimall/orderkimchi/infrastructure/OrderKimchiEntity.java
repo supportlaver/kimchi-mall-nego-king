@@ -42,7 +42,6 @@ public class OrderKimchiEntity extends BaseEntity {
 
     public static OrderKimchiEntity from(OrderKimchi orderKimchi) {
         return OrderKimchiEntity.builder()
-                // .id(orderKimchi.getId())
                 .kimchi(KimchiEntity.from(orderKimchi.getKimchi()))
                 .orderPrice(orderKimchi.getPrice())
                 .quantity(orderKimchi.getQuantity())
@@ -51,9 +50,7 @@ public class OrderKimchiEntity extends BaseEntity {
 
     public OrderKimchi toModel() {
         return OrderKimchi.builder()
-                //.id(id)
                 .kimchi(kimchi.toModel())
-                //.order(order.toModel())
                 .price(orderPrice)
                 .quantity(quantity)
                 .build();

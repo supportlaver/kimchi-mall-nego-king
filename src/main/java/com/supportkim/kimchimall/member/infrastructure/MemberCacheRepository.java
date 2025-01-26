@@ -18,7 +18,6 @@ import static com.supportkim.kimchimall.member.controller.response.MemberRespons
 @Slf4j
 public class MemberCacheRepository {
     private final RedisTemplate<String , Member> memberRedisTemplate;
-    // TTL 걸어주기 (사용하지 않는 캐시 데이터 삭제)
     private final static Duration KIMCHI_CACHE_TTL = Duration.ofDays(3);
 
     public void setMember(Member member) {

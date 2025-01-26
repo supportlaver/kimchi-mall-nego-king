@@ -38,9 +38,6 @@ public class KimchiEntity extends BaseEntity {
     private int quantity;
     private Long sellerId;
 
-/*    @Version
-    private int version;*/
-
     public static KimchiEntity from(Kimchi kimchi) {
         return KimchiEntity.builder()
                 .id(kimchi.getId())

@@ -22,7 +22,6 @@ public class CustomMemberDetailsService implements UserDetailsService {
     private final MemberService memberService;
     @Override
     public UserDetails loadUserByUsername(String loginId) throws UsernameNotFoundException {
-        // 1차적으로 loginId 만 비교
         Member member = memberService.findByLoginId(loginId);
         List<GrantedAuthority> roles = new ArrayList<>();
         roles.add(new SimpleGrantedAuthority("BASIC"));

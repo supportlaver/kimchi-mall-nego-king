@@ -44,7 +44,6 @@ public class LedgerPaymentEventListener {
         if (ledgerTransactionRepository.existsByOrderId(event.getOrderId())) {
             throw new BaseException(ErrorCode.ALREADY_PAYMENT_LEDGER_PROCESS);
         }
-        // 6-2) 계정 및 결제 주문 로드
         MemberEntity buyer = memberRepository.findById(event.getBuyerId()).orElseThrow(() -> new BaseException(ErrorCode.MEMBER_NOT_FOUND));
         Account buyerAccount = accountRepository.findByMemberId(buyer.getId()).orElseThrow(()
                 -> new BaseException(ErrorCode.MEMBER_ACCOUNT_NOT_FOUND));
@@ -56,7 +55,6 @@ public class LedgerPaymentEventListener {
 
         Set<Long> sellerIds = paymentOrdersBySellerId.keySet();
         List<Account> sellerAccounts = accountRepository.findByMemberIds(sellerIds);
-        // 6-3) 복식부기 엔트리 생성 (Ledger)
         List<DoubleAccountsForLedger> ledgerList = sellerAccounts.stream()
                 .map(sellerAccount -> {
                     DoubleAccountsForLedger ledger = new DoubleAccountsForLedger();
@@ -75,7 +73,6 @@ public class LedgerPaymentEventListener {
     }
     private List<LedgerEntry> createLedgerEntries(List<DoubleAccountsForLedger> ledgerList, List<PaymentOrder> paymentOrders) {
         return ledgerList.stream()
-                // ledger(구매자/판매자) x order(주문) 조합을 flatMap
                 .flatMap(ledger -> paymentOrders.stream().flatMap(order -> {
                     LedgerTransaction transaction = LedgerTransaction.builder()
                             .referenceType("PAYMENT_ORDER")
@@ -86,19 +83,18 @@ public class LedgerPaymentEventListener {
 
                     LedgerEntry creditEntry = LedgerEntry.builder()
                             .amount(BigDecimal.valueOf(order.getAmount()))
-                            .accountId(ledger.getTo().getId())  // buyer account
+                            .accountId(ledger.getTo().getId())
                             .transaction(transaction)
                             .type(LedgerEntryType.CREDIT)
                             .build();
 
                     LedgerEntry debitEntry = LedgerEntry.builder()
                             .amount(BigDecimal.valueOf(order.getAmount()))
-                            .accountId(ledger.getFrom().getId())  // seller account
+                            .accountId(ledger.getFrom().getId())
                             .transaction(transaction)
                             .type(LedgerEntryType.DEBIT)
                             .build();
 
-                    // CREDIT/DEBIT 두 개의 엔티티를 Stream으로 반환
                     return Stream.of(creditEntry, debitEntry);
                 }))
                 .collect(Collectors.toList());

@@ -2,7 +2,7 @@ config:
   target: 'http://localhost:8081'
   phases:
     - duration: 15
-      arrivalRate: 550
+      arrivalRate: 20
       name: Constant Load
   payload:
     path: "ids.csv"
@@ -33,7 +33,7 @@ scenarios:
               as: "orderId"
 
       - post:
-          url: "/test/confirm-kafka"
+          url: "/test/confirm"
           json:
             paymentKey: "{{ faker.random.uuid }}"
             orderId: "{{ orderId }}"

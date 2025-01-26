@@ -46,10 +46,6 @@ public class MemberServiceImpl implements MemberService {
                 .orElseThrow(() -> new BaseException(ErrorCode.MEMBER_PK_ID_NOT_FOUND));
     }
 
-    @Override
-    public MemberLoginResponse login(MemberLoginRequest memberLoginRequestDto) {
-        throw new RuntimeException("no development");
-    }
 
     @Override
     public Member findByLoginId(String loginId) {
@@ -65,14 +61,6 @@ public class MemberServiceImpl implements MemberService {
 
     @Override
     public Member findByEmail(String email) {
-        return memberRepository.findByEmail(email).orElseThrow(() -> new BaseException(ErrorCode.MEMBER_EMAIL_NOT_FOUND));
-    }
-
-    @Override
-    public Member findByAccessToken(HttpServletRequest request) {
-        String accessToken = jwtService.extractAccessToken(request)
-                .orElseThrow(() -> new BaseException(ErrorCode.NOT_EXIST_TOKEN));
-        String email = jwtService.extractMemberEmail(accessToken);
         return memberRepository.findByEmail(email).orElseThrow(() -> new BaseException(ErrorCode.MEMBER_EMAIL_NOT_FOUND));
     }
 }

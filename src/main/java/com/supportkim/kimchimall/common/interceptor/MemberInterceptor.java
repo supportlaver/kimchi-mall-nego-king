@@ -14,6 +14,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
+import java.util.Optional;
+
 /**
  * 이부분은 스프링 AOP 를 통해 구현하는 것도 좋은 방법 (추후에 해보기)
  */
@@ -41,14 +43,12 @@ public class MemberInterceptor implements HandlerInterceptor {
                 .orElseThrow(() -> new BaseException(ErrorCode.NOT_EXIST_TOKEN));
         String email = jwtService.extractMemberEmail(accessToken);
 
-        if (cacheRepository.getMember(email).isPresent()) {
-            Member member = cacheRepository.getMember(email).get();
-            // TODO: 10/16/24 중복되는 코드 리팩토링 필요
-            request.setAttribute("member", member);
-            return true;
-        }
-        Member member = memberRepository.findByEmailWithCartAndCartKimchi(email)
-                .orElseThrow(() -> new BaseException(ErrorCode.MEMBER_EMAIL_NOT_FOUND));
+        Optional<Member> optionalMember = cacheRepository.getMember(email);
+        Member member = optionalMember.orElseGet(() ->
+                memberRepository.findByEmailWithCartAndCartKimchi(email)
+                        .orElseThrow(() -> new BaseException(ErrorCode.MEMBER_EMAIL_NOT_FOUND))
+        );
+
         request.setAttribute("member", member);
         return true;
     }

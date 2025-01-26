@@ -14,7 +14,6 @@ import static com.supportkim.kimchimall.kimchi.controller.response.KimchiRespons
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api")
-// @RequestMapping("/kimchi-mall-service/api")
 public class KimchiController {
 
     private final KimchiService kimchiService;
@@ -37,31 +36,4 @@ public class KimchiController {
     public ResponseEntity<BaseResponse<SingleKimchi>> getKimchi(@RequestParam("kimchi-name") String kimchiName) {
         return ResponseEntity.ok().body(new BaseResponse<>(kimchiService.getKimchi(kimchiName)));
     }
-
-    /**
-     * Redis Cache 등록 API
-     */
-    // 캐시 API
-    @PostMapping("/cache-kimchi")
-    public String cacheKimchi(@RequestBody Kimchi kimchi) {
-        redisCacheKimchiRepository.setKimchi(kimchi);
-        // 확인
-        String key = redisCacheKimchiRepository.getKey(kimchi.getName());
-        return "캐시 등록된 key : " + key;
-    }
-
-
-    // 단건 장바구니에 담기
-//    @PostMapping("/kimchis")
-//    public ResponseEntity<BaseResponse<KimchiDto>> putKimchiInCart(@RequestBody PutCart putCartDto , HttpServletRequest request) {
-//        return ResponseEntity.ok().body(new BaseResponse<>(kimchiService.putKimchiInCart(putCartDto ,request)));
-//    }
-
-    /**
-     * 장바구니 조회
-     */
-
-    /**
-     * OpenFeign 으로 결제 서버에 데이터 전송
-     */
 }

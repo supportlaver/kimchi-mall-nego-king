@@ -31,7 +31,6 @@ public class MockTossPaymentExecutor {
                 false, // isUnknown
                 false // isRetryable
         );
-
         return mockResult;
     }
 }

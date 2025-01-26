@@ -13,6 +13,6 @@ public class Account {
     private Long id;
 
     @OneToOne
-    @JoinColumn(name = "member_id", nullable = false, unique = true) // member_id는 유니크 제약 조건
+    @JoinColumn(name = "member_id", nullable = false, unique = true)
     private MemberEntity member;
 }

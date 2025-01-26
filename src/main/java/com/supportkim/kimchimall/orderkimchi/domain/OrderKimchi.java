@@ -13,7 +13,6 @@ import static jakarta.persistence.FetchType.LAZY;
 
 @Getter @Builder
 public class OrderKimchi {
-    // private Long id;
     private int price;
     private int quantity;
     private Kimchi kimchi;

@@ -19,10 +19,6 @@ public class Cart {
     private Long id;
     private int quantity;
     private List<CartKimchi> cartKimchis = new ArrayList<>();
-    /*@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
-    private LocalDateTime createdAt;
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
-    private LocalDateTime updatedAt;*/
 
     public void clear() {
         this.cartKimchis.clear();

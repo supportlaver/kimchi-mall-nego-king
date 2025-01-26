@@ -47,7 +47,6 @@ public class MemberEntity extends BaseEntity {
     @JoinColumn(name = "cart_id")
     private CartEntity cart;
 
-    // 회원가입 용(Cart X)
     public static MemberEntity fromForJoin(Member member) {
         return MemberEntity.builder()
                 .id(member.getMemberId())
@@ -56,14 +55,12 @@ public class MemberEntity extends BaseEntity {
                 .address(member.getAddress())
                 .email(member.getEmail())
                 .phoneNumber(member.getPhoneNumber())
-                //.orders(OrderEntity.fromList(member.getOrders()))
                 .name(member.getName())
                 .build();
     }
 
     // 회원가입 용(Cart X)
     public static MemberEntity fromForLogin(Member member) {
-        log.info("memberCartId = {} " , member.getCart());
         return MemberEntity.builder()
                 .id(member.getMemberId())
                 .loginId(member.getLoginId())
@@ -72,7 +69,6 @@ public class MemberEntity extends BaseEntity {
                 .email(member.getEmail())
                 .phoneNumber(member.getPhoneNumber())
                 .cart(CartEntity.from(member.getCart()))
-                //.orders(OrderEntity.fromList(member.getOrders()))
                 .name(member.getName())
                 .build();
     }
@@ -88,9 +84,6 @@ public class MemberEntity extends BaseEntity {
                 .email(email)
                 .phoneNumber(phoneNumber)
                 .address(address)
-                //.cart(cart.toModel())
-                // 지연로딩 -> could not initialize proxy - no Session 오류 발생
-                //.orders(orders.stream().map(OrderEntity::toModel).collect(toList()))
                 .build();
     }
     public Member toModelForLogin() {
@@ -103,8 +96,6 @@ public class MemberEntity extends BaseEntity {
                 .phoneNumber(phoneNumber)
                 .address(address)
                 .cart(cart.toModel())
-                // 지연로딩 -> could not initialize proxy - no Session 오류 발생
-                //.orders(orders.stream().map(OrderEntity::toModel).collect(toList()))
                 .build();
     }
 

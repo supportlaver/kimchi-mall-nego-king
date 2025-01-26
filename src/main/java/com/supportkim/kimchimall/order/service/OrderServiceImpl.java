@@ -64,26 +64,13 @@ public class OrderServiceImpl implements OrderService {
         Member member = ClassUtils.getSafeCastInstance(request.getAttribute("member"), Member.class);
 
         Cart cart = member.getCart();
-        // cartKimchis 안에 있는 CartKimchi 를 OrderKimchi 들로 만들고 Order 객체 만들기
 
-        // 1. cartKimchis -> OrderKimchi 로 만들기 (Cart 와 CartKimchi 는 모두 없애기)
         List<CartKimchi> cartKimchis = cart.getCartKimchis();
 
         List<OrderKimchi> orderKimchis = cartKimchis.stream().map(OrderKimchi::from).toList();
         int orderTotalPrice = orderKimchis.stream()
                 .mapToInt(OrderKimchi::getPrice)
                 .sum();
-
-        // 장바구니 비우기
-        // cart.clear();
-
-        log.info("orderTotalPrice = {} " , orderTotalPrice);
-
-        // 실제 Entity 에 적용 해서 데이터 동기화
-        // cartRepository.save(cart);
-
-
-        // 2. OrderKimchi -> Order 로 만들고 DB 저장
         Order order = Order.of(orderKimchis, member , orderTotalPrice);
 
         Order createOrder = orderRepository.save(order);
@@ -99,25 +86,20 @@ public class OrderServiceImpl implements OrderService {
 
         Optional<Kimchi> cacheKimchi = kimchiCacheRepository.getKimchi(requestDto.getKimchiName());
 
-        // Cache 에서 우선 확인하고 없다면 그때 DB 에서 조회
         if (cacheKimchi.isEmpty()) {
             log.error("CACHE 비어있음");
             return OrderResponse.builder().build();
         }
 
-        // 1. 주문 저장
         Order createOrder = savedOrder(requestDto, member, cacheKimchi);
 
-        // 2. 결제 시작
         if (!successPayment(createOrder)) {
             throw new BaseException(ErrorCode.PAYMENT_ERROR);
         }
 
-        // 3. 배송 정보 저장
         Delivery delivery = Delivery.from(member);
         deliveryService.save(delivery);
 
-        // 4. 상품 재고 감소 (상품 재고가 있는지 확인)
         Kimchi kimchi = cacheKimchi.get();
 
         Kimchi findKimchi = kimchiRepository.findById(kimchi.getId());
@@ -136,12 +118,6 @@ public class OrderServiceImpl implements OrderService {
         return mockService.payment(createOrder);
     }
 
-    /*private OrderResponse savedOrderWithKafka(Member member) {
-        streamBridge.send("orders" , OrderEventMessage
-                .of(member.getMemberId(),List.of(orderKimchi), totalPrice++ , UUID.randomUUID().toString()));
-        return OrderResponse.ordering(totalPrice, member);
-    }*/
-
     private Order savedOrder(OrderRequestImmediately requestDto, Member member, Optional<Kimchi> cacheKimchi) {
         int totalPrice = cacheKimchi.get().getPrice() * requestDto.getCount();
         OrderKimchi orderKimchi = OrderKimchi.builder()
@@ -149,8 +125,6 @@ public class OrderServiceImpl implements OrderService {
                 .kimchi(cacheKimchi.get())
                 .quantity(requestDto.getCount())
                 .build();
-
-        // Order 저장하는 부분은 Kafka 에게 전달
         Order order = Order.of(List.of(orderKimchi), member, totalPrice);
         return orderRepository.save(order);
     }
