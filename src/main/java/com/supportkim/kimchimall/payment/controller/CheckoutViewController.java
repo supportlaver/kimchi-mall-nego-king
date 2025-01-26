@@ -31,7 +31,6 @@ public class CheckoutViewController {
         model.addAttribute("orderName", it.getOrderName());
         model.addAttribute("amount", it.getAmount());
 
-        // 뷰 이름 반환
         return "checkout";
     }
 }
