@@ -34,7 +34,6 @@ public class TossPaymentExecutor {
 
 
         try {
-            // 정상 호출
             TossPaymentConfirmationResponse response = tossPaymentFeignClient.confirmPayment(
                     command.getOrderId(), requestBody
             );
@@ -55,15 +54,12 @@ public class TossPaymentExecutor {
             );
 
         } catch (Exception e) {
-            // Feign 예외 분리
             if (e instanceof FeignException) {
                 FeignException feignException = (FeignException) e;
 
-                // body content 체크
                 String body = feignException.contentUTF8();
 
                 if (body == null || body.trim().isEmpty()) {
-                    // 바디가 없는 경우 → 특정 에러 처리
                     log.error("Feign call returned status: {}, headers: {}, body length: {}",
                             feignException.status(),
                             feignException.responseHeaders(),
@@ -75,7 +71,6 @@ public class TossPaymentExecutor {
                     );
                 }
 
-                // 바디가 있다면 JSON 파싱 시도
                 TossPaymentConfirmationResponse.TossFailureResponse failureResponse
                         = parseFailureResponse(body);
 

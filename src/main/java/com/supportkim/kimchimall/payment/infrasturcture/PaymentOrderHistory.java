@@ -18,24 +18,23 @@ public class PaymentOrderHistory {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id; // PK, BIG INT, AUTO INCREMENT
+    private Long id;
 
     @Column(name = "payment_order_id", nullable = false)
-    private Long paymentOrderId; // FK, BIG INT, Payment Order 를 참조하는 식별자
+    private Long paymentOrderId;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "previous_status", nullable = false)
-    private PaymentStatus previousStatus; // ENUM, 변경 전 결제 상태
+    private PaymentStatus previousStatus;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "new_status", nullable = false)
-    private PaymentStatus newStatus; // ENUM, 변경 후 결제 상태
-
+    private PaymentStatus newStatus;
     @Column(name = "created_at")
-    private LocalDateTime createdAt; // DATETIME, 생성된 시각
+    private LocalDateTime createdAt;
 
     @Column(name = "reason", length = 255)
-    private String reason; // VARCHAR, 상태 변경의 이유
+    private String reason;
 
 
     public static PaymentOrderHistory of(

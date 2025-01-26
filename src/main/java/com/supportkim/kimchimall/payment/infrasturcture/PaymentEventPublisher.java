@@ -18,8 +18,7 @@ public class PaymentEventPublisher {
     public Supplier<Flux<PaymentEventMessage>> payment() {
         return () -> sink.asFlux()
                 .doOnError(error -> {
-                    // 에러 처리 로직
-                    System.err.println("Error in couponEventSupplier: " + error.getMessage());
+                    log.error("Error in couponEventSupplier: {}" , error.getMessage());
                 });
     }
 

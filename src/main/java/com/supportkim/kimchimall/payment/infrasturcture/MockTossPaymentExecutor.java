@@ -13,23 +13,23 @@ import java.time.LocalDateTime;
 public class MockTossPaymentExecutor {
     public PaymentExecutionResult execute(TossPaymentConfirmTest command) {
         PaymentExtraDetails extraDetails = new PaymentExtraDetails(
-                PaymentType.NORMAL, // type
-                PaymentMethod.EASY_PAY, // method
-                LocalDateTime.parse("2025-01-04T18:30:26"), // approvedAt
-                "배추김치, 깍두기, 파김치", // orderName
-                PSPConfirmationStatus.DONE, // pspConfirmationStatus
-                38000, // totalAmount
-                "TossPaymentConfirmationResponse" // pspRawData (JSON string 또는 class)
+                PaymentType.NORMAL,
+                PaymentMethod.EASY_PAY,
+                LocalDateTime.parse("2025-01-04T18:30:26"),
+                "배추김치, 깍두기, 파김치",
+                PSPConfirmationStatus.DONE,
+                38000,
+                "TossPaymentConfirmationResponse"
         );
 
         PaymentExecutionResult mockResult = new PaymentExecutionResult(
-                command.getPaymentKey(), // paymentKey
-                command.getOrderId(), // orderId
+                command.getPaymentKey(),
+                command.getOrderId(),
                 extraDetails,
-                true, // isSuccess
-                false, // isFailure
-                false, // isUnknown
-                false // isRetryable
+                true,
+                false,
+                false,
+                false
         );
         return mockResult;
     }

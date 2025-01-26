@@ -31,13 +31,11 @@ public class PaymentEventHandler {
     private final PaymentEventService paymentEventService;
     @Bean
     public Consumer<WalletCompleteEventMessage> walletResult() {
-        log.info("PaymentEventHandler.walletResult");
         return paymentEventService::handleWalletCompleteEvent;
     }
 
     @Bean
     public Consumer<LedgerCompleteEventMessage> ledgerResult() {
-        log.info("PaymentEventHandler.ledgerResult");
         return paymentEventService::handleLedgerCompleteEvent;
     }
 }

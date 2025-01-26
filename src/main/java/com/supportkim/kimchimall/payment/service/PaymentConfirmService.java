@@ -97,7 +97,6 @@ public class PaymentConfirmService {
         PaymentStatusUpdateCommand paymentStatusUpdateCommand = PaymentStatusUpdateCommand.from(paymentExecutionResult);
         updatePaymentStatus(paymentStatusUpdateCommand);
 
-        // 바로 커밋 시키기
         paymentOrderRepository.flush();
 
         try {
@@ -222,13 +221,12 @@ public class PaymentConfirmService {
 
         List<Pair<Long, String>> result = checkPreviousPaymentOrderStatus(paymentEvent.getOrderId());
 
-        // 엔터티 리스트 생성
         List<PaymentOrderHistory> paymentHistories = result.stream()
                 .map(pair -> PaymentOrderHistory.builder()
-                        .paymentOrderId(pair.getKey()) // Order ID
-                        .previousStatus(PaymentStatus.get(pair.getValue())) // 이전 상태
-                        .newStatus(PaymentStatus.EXECUTING) // 새로운 상태
-                        .reason("PAYMENT_CONFIRMATION_START") // 변경 이유
+                        .paymentOrderId(pair.getKey())
+                        .previousStatus(PaymentStatus.get(pair.getValue()))
+                        .newStatus(PaymentStatus.EXECUTING)
+                        .reason("PAYMENT_CONFIRMATION_START")
                         .createdAt(LocalDateTime.now())
                         .build())
                 .collect(Collectors.toList());
@@ -310,7 +308,6 @@ public class PaymentConfirmService {
 
     private List<LedgerEntry> createLedgerEntries(List<DoubleAccountsForLedger> ledgerList, List<PaymentOrder> paymentOrders) {
         return ledgerList.stream()
-                // ledger(구매자/판매자) x order(주문) 조합을 flatMap
                 .flatMap(ledger -> paymentOrders.stream().flatMap(order -> {
                     LedgerTransaction transaction = LedgerTransaction.builder()
                             .referenceType("PAYMENT_ORDER")
@@ -333,7 +330,6 @@ public class PaymentConfirmService {
                             .type(LedgerEntryType.DEBIT)
                             .build();
 
-                    // CREDIT/DEBIT 두 개의 엔티티를 Stream으로 반환
                     return Stream.of(creditEntry, debitEntry);
                 }))
                 .collect(Collectors.toList());
@@ -347,13 +343,10 @@ public class PaymentConfirmService {
     private void getUpdatedWallets(Map<Long, List<PaymentOrder>> paymentOrdersBySellerId) {
         Set<Long> sellerIds = paymentOrdersBySellerId.keySet();
 
-        // 지갑 가져오기
         List<Wallet> wallets = walletRepository.findByUserIdsWithLock(sellerIds);
         System.out.println("wallets = " + wallets.size());
 
-        // 지갑 업데이트 후 WalletTransaction 저장
         wallets.forEach(wallet -> {
-            // calculateBalanceWith 호출 후 반환된 WalletTransaction 저장
             List<WalletTransaction> transactions =
                     wallet.calculateBalanceWith(paymentOrdersBySellerId.get(wallet.getUserId()));
 
@@ -374,44 +367,24 @@ public class PaymentConfirmService {
     }
 
     public boolean updatePaymentStatusToUnknown(PaymentStatusUpdateCommand command) {
-        // Step 1: PaymentOrder 상태 가져오기
         List<Object[]> paymentOrderStatusList = paymentOrderRepository.findPaymentOrderStatusByOrderId(command.getOrderId());
-
-        // Step 2: PaymentOrder 상태를 PaymentHistory로 저장
         insertPaymentHistory(paymentOrderStatusList, command.getStatus(), command.getFailure().toString());
-
-        // Step 3: PaymentOrder 상태 업데이트
         updatePaymentOrderStatus(command.getOrderId(), command.getStatus());
-
-        // Step 4: PaymentOrder 실패 카운트 증가
-        // incrementPaymentOrderFailedCount(command);
         return true;
     }
 
     public boolean updatePaymentStatusToFailure(PaymentStatusUpdateCommand command) {
-        // Step 1: PaymentOrder 상태 가져오기
         List<Object[]> paymentOrderStatusList = paymentOrderRepository.findPaymentOrderStatusByOrderId(command.getOrderId());
-
-        // Step 2: PaymentOrder 상태를 PaymentHistory로 저장
         insertPaymentHistory(paymentOrderStatusList, command.getStatus(), command.getFailure().toString());
-
-        // Step 3: PaymentOrder 상태 업데이트
         updatePaymentOrderStatus(command.getOrderId(), command.getStatus());
 
         return true;
     }
 
     public boolean updatePaymentStatusToSuccess(PaymentStatusUpdateCommand command) {
-        // Step 1: PaymentOrder 상태 가져오기
         List<Object[]> paymentOrderStatusList = paymentOrderRepository.findPaymentOrderStatusByOrderId(command.getOrderId());
-
-        // Step 2: PaymentOrder 상태를 PaymentHistory로 저장
         insertPaymentHistory(paymentOrderStatusList, command.getStatus(), "PAYMENT_CONFIRMATION_DONE");
-
-        // Step 3: PaymentOrder 상태 업데이트
         updatePaymentOrderStatus(command.getOrderId(), command.getStatus());
-
-        // Step 4: PaymentEvent 추가 정보 업데이트
         updatePaymentEventExtraDetails(command);
 
         return true;
@@ -420,10 +393,10 @@ public class PaymentConfirmService {
     private void insertPaymentHistory(List<Object[]> paymentOrderStatusList, PaymentStatus status, String reason) {
         List<PaymentOrderHistory> historyList = paymentOrderStatusList.stream()
                 .map(record -> PaymentOrderHistory.of(
-                        (Long) record[0], // paymentOrderId
-                        ((PaymentStatus) record[1]), // 이전 상태를 String으로 변환
-                        status, // 새 상태를 String으로 변환
-                        reason // 변경 이유
+                        (Long) record[0],
+                        ((PaymentStatus) record[1]),
+                        status,
+                        reason
                 ))
                 .collect(Collectors.toList());
         paymentOrderHistoryRepository.saveAll(historyList);
@@ -445,17 +418,14 @@ public class PaymentConfirmService {
     }
 
     private List<Pair<Long, String>> checkPreviousPaymentOrderStatus(String orderId) {
-        // 데이터베이스에서 상태 조회
         List<Object[]> result = paymentOrderRepository.findPaymentOrderStatusByOrderId(orderId);
 
-        // Object[]를 Pair<Long, String>으로 매핑
         List<Pair<Long, String>> pairs = result.stream()
                 .map(row -> new Pair<>((Long) row[0], ((PaymentStatus) row[1]).name())) // PaymentStatus → String 변환
                 .toList();
 
-        // 상태 검증 및 필터링
         pairs.forEach(pair -> {
-            String status = pair.getValue(); // getRight() 대신 getValue() 사용
+            String status = pair.getValue();
             if (PaymentStatus.SUCCESS.name().equals(status)) {
                 throw new PaymentAlreadyProcessedException(
                         "이미 처리 성공한 결제 입니다.",
@@ -469,7 +439,6 @@ public class PaymentConfirmService {
             }
         });
 
-        // 처리 가능한 상태만 반환
         return pairs.stream()
                 .filter(pair -> PaymentStatus.NOT_STARTED.name().equals(pair.getValue()) ||
                         PaymentStatus.UNKNOWN.name().equals(pair.getValue()) ||

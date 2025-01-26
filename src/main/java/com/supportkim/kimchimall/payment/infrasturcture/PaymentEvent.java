@@ -96,8 +96,6 @@ public class PaymentEvent {
     }
 
     public void completeIfDone() {
-        System.out.println("isWalletUpdateDone " + isWalletUpdateDone());
-        System.out.println("isLedgerUpdateDone " + isLedgerUpdateDone());
         if (allPaymentOrdersDone()) {
             isPaymentDone = true;
         }

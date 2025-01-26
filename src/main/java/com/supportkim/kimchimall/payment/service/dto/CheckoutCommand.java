@@ -20,7 +20,6 @@ public class CheckoutCommand {
                 .cartId(request.getCartId())
                 .buyerId(request.getBuyerId())
                 .kimchiIds(request.getKimchiIds())
-                // .idempotencyKey(IdempotencyCreator.create(request.getSeed()))
                 .idempotencyKey(UUID.randomUUID().toString())
                 .build();
     }
