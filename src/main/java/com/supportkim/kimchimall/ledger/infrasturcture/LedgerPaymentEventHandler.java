@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.messaging.Message;
 
 import java.util.function.Consumer;
 
@@ -13,8 +14,12 @@ import java.util.function.Consumer;
 public class LedgerPaymentEventHandler {
 
     private final LedgerServiceForKafka ledgerServiceForKafka;
+
     @Bean
-    public Consumer<PaymentEventMessage> ledger() {
-        return ledgerServiceForKafka::ledger;
+    public Consumer<Message<PaymentEventMessage>> ledger() {
+        return message -> {
+            PaymentEventMessage payload = message.getPayload();
+            ledgerServiceForKafka.ledger(payload);
+        };
     }
 }

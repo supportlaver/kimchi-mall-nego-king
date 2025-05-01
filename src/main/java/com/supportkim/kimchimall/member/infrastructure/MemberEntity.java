@@ -6,7 +6,6 @@ import com.supportkim.kimchimall.common.global.BaseEntity;
 import com.supportkim.kimchimall.coupon.domain.Coupon;
 import com.supportkim.kimchimall.coupon.infrastructure.CouponEntity;
 import com.supportkim.kimchimall.member.domain.Member;
-import com.supportkim.kimchimall.notification.infrastructure.NotificationEntity;
 import com.supportkim.kimchimall.order.infrastructure.OrderEntity;
 import jakarta.persistence.*;
 import lombok.*;

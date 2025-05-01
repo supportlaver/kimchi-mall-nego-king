@@ -26,13 +26,11 @@ public class CheckoutService {
 
     @Transactional
     public CheckoutResponse checkout(CheckoutCommand command) {
-
         List<KimchiEntity> kimchis = kimchiService.getKimchis(command.getKimchiIds());
 
         PaymentEvent paymentEvent = createPaymentEvent(command, kimchis);
 
         paymentEventJpaRepository.save(paymentEvent);
-
 
         return CheckoutResponse.from(paymentEvent);
     }

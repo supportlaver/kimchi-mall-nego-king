@@ -5,6 +5,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.kafka.support.KafkaHeaders;
+import org.springframework.messaging.Message;
 
 import java.util.function.Consumer;
 
@@ -12,8 +14,13 @@ import java.util.function.Consumer;
 @RequiredArgsConstructor
 public class WalletPaymentEventHandler {
     private final WalletServiceForKafka walletServiceForKafka;
+
+
     @Bean
-    public Consumer<PaymentEventMessage> wallet() {
-        return walletServiceForKafka::processWalletEvent;
+    public Consumer<Message<PaymentEventMessage>> wallet() {
+        return message -> {
+            PaymentEventMessage payload = message.getPayload();
+            walletServiceForKafka.processWalletEvent(payload);
+        };
     }
 }

@@ -14,6 +14,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.CannotAcquireLockException;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,6 +29,7 @@ import java.util.stream.Collectors;
 
 @Component @Slf4j
 @RequiredArgsConstructor
+@EnableAsync
 public class WalletPaymentEventListener {
     private final PaymentOrderJpaRepository paymentOrderRepository;
     private final WalletTransactionJpaRepository walletTransactionRepository;
@@ -36,6 +39,7 @@ public class WalletPaymentEventListener {
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @Async
     public void walletProcess(PaymentEventMessage event) {
         if (walletTransactionRepository.existsByOrderId(event.getOrderId())) {
             throw new BaseException(ErrorCode.ALREADY_PAYMENT_WALLET_PROCESS);

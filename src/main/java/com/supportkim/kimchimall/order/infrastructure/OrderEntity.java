@@ -42,7 +42,6 @@ public class OrderEntity extends BaseEntity {
     private int totalPrice;
 
     public static OrderEntity from(Order order) {
-        System.out.println("order123 : " + order);
         return OrderEntity.builder()
                 .member(MemberEntity.fromForJoin(order.getMember()))
                 .orderStatus(order.getOrderStatus())

@@ -344,7 +344,6 @@ public class PaymentConfirmService {
         Set<Long> sellerIds = paymentOrdersBySellerId.keySet();
 
         List<Wallet> wallets = walletRepository.findByUserIdsWithLock(sellerIds);
-        System.out.println("wallets = " + wallets.size());
 
         wallets.forEach(wallet -> {
             List<WalletTransaction> transactions =

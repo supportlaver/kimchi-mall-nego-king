@@ -13,6 +13,8 @@ import com.supportkim.kimchimall.wallet.infrasturcture.WalletJpaRepository;
 import com.supportkim.kimchimall.wallet.infrasturcture.WalletTransactionJpaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,7 +28,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-@Component
+@Component @EnableAsync
 @RequiredArgsConstructor
 public class LedgerPaymentEventListener {
 
@@ -39,6 +41,7 @@ public class LedgerPaymentEventListener {
     private final ApplicationEventPublisher eventPublisher;
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @Async
     public void ledgerProcess(PaymentEventMessage event) {
 
         if (ledgerTransactionRepository.existsByOrderId(event.getOrderId())) {

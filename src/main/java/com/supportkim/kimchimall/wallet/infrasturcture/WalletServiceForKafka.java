@@ -29,6 +29,7 @@ public class WalletServiceForKafka {
     private final StreamBridge streamBridge;
     @Transactional
     public void processWalletEvent(PaymentEventMessage event) {
+        System.out.println("메시지 소비 - Wallet");
         if (walletTransactionRepository.existsByOrderId(event.getOrderId())) {
             throw new BaseException(ErrorCode.ALREADY_PAYMENT_WALLET_PROCESS);
         }

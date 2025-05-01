@@ -34,6 +34,7 @@ public class LedgerServiceForKafka {
 
     @Transactional
     public void ledger(PaymentEventMessage event) {
+        System.out.println("메시지 소비 - Ledger");
         if (ledgerTransactionRepository.existsByOrderId(event.getOrderId())) {
             throw new BaseException(ErrorCode.ALREADY_PAYMENT_LEDGER_PROCESS);
         }

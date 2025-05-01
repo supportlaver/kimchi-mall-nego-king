@@ -12,7 +12,7 @@ import java.util.Optional;
 
 public interface PaymentOrderJpaRepository extends JpaRepository<PaymentOrder , Long> {
     @Query("SELECT p.id, p.paymentStatus FROM PaymentOrder p WHERE p.orderId = :orderId")
-    List<Object[]> findPaymentOrderStatusByOrderId(String orderId);
+    List<Object[]> findPaymentOrderStatusByOrderId(@Param("orderId") String orderId);
 
     List<PaymentOrder> findByOrderId(String orderId);
 
