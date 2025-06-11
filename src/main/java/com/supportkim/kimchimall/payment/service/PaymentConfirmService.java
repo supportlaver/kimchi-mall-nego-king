@@ -241,7 +241,6 @@ public class PaymentConfirmService {
         // PaymentEvent 에서 PaymentKey 업데이트 (TossAPI 에서 발급해준 Key)
         paymentEvent.updatePaymentKey(command.getPaymentKey());
 
-
         // 2. 결제 유효성 검증 (결제 금액을 비교하여 검증)
         Integer amount = paymentOrderRepository.findTotalAmountByOrderId(command.getOrderId());
         // 만약 문제가 있다면 예외 발생
