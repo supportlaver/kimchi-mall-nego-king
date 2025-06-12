@@ -49,4 +49,10 @@ public class TossPaymentTestController {
         return ResponseEntity.ok().body(new BaseResponse<>(paymentConfirmTestService.testConfirmKafka(command)));
     }
 
+    @PostMapping("/confirm-outbox-kafka")
+    public ResponseEntity<BaseResponse<PaymentConfirmationResult>> testConfirmOutboxKafka(@RequestBody TossPaymentConfirmTest request) {
+        TossPaymentConfirmTest command = TossPaymentConfirmTest.from(request);
+        return ResponseEntity.ok().body(new BaseResponse<>(paymentConfirmTestService.testConfirmOutboxKafka(command)));
+    }
+
 }
