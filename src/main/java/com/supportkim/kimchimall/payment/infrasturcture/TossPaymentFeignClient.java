@@ -13,6 +13,7 @@ import java.util.Map;
         name = "tossPaymentFeignClient",
         url = "${PSP.toss.url}",
         configuration = TossFeignClientConfig.class
+
 )
 public interface TossPaymentFeignClient {
 

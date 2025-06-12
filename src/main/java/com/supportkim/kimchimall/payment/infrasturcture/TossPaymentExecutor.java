@@ -110,7 +110,7 @@ public class TossPaymentExecutor {
     @Recover
     public PaymentExecutionResult recover(PSPConfirmationException e, PaymentConfirmCommand command) {
         log.error("결제 재시도 실패, 복구 로직 수행 필요: {}", e.getMessage());
-        throw e; // 혹은 fallback PaymentExecutionResult 반환
+        throw e;
     }
 
     public static TossPaymentConfirmationResponse.TossFailureResponse parseFailureResponse(String json) {

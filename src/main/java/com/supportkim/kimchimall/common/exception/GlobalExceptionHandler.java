@@ -28,4 +28,15 @@ public class GlobalExceptionHandler {
                 .status(HttpStatus.SERVICE_UNAVAILABLE)
                 .body(ErrorResponse.of(Objects.requireNonNull(errorCode)));
     }
+
+    @ExceptionHandler(PSPConfirmationException.class)
+    public ResponseEntity<ErrorResponse> handlePSPConfirmationException(PSPConfirmationException e) {
+        log.error("결제 처리 중 재시도 실패: {}", e.getMessage());
+
+        ErrorCode errorCode = ErrorCode.findByMessage(e.getMessage());
+
+        return ResponseEntity
+                .status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(ErrorResponse.of(Objects.requireNonNull(errorCode)));
+    }
 }
