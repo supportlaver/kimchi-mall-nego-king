@@ -45,16 +45,12 @@ public class PaymentEvent {
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "paymentEvent", orphanRemoval = true)
     private List<PaymentOrder> paymentOrders = new ArrayList<>();
 
-    @Column(nullable = false)
-    private boolean isPaymentDone = false;
-
     public static PaymentEvent of(Long buyerId, String orderName, String orderId, List<PaymentOrder> paymentOrders) {
         return PaymentEvent.builder()
                 .buyerId(buyerId)
                 .orderName(orderName)
                 .orderId(orderId)
                 .paymentOrders(paymentOrders)
-                .isPaymentDone(false)
                 .build();
     }
 
@@ -64,13 +60,6 @@ public class PaymentEvent {
                 .sum();
     }
 
-    public void confirmPaymentDone() {
-        this.isPaymentDone = true;
-    }
-
-    public boolean isPaymentDone() {
-        return isPaymentDone;
-    }
 
     public boolean isSuccess() {
         return paymentOrders.stream()
@@ -93,12 +82,6 @@ public class PaymentEvent {
 
     public void confirmLedgerUpdate() {
         paymentOrders.forEach(PaymentOrder::confirmLedgerUpdate);
-    }
-
-    public void completeIfDone() {
-        if (allPaymentOrdersDone()) {
-            isPaymentDone = true;
-        }
     }
 
     public boolean isLedgerUpdateDone() {

@@ -28,6 +28,7 @@ public class MemberInterceptor implements HandlerInterceptor {
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         String requestUrl = request.getRequestURI();
+        log.info("requestUrl = {} " , requestUrl);
         if (requestUrl.startsWith("/test")) {
             return true;
         }
@@ -37,6 +38,10 @@ public class MemberInterceptor implements HandlerInterceptor {
         }
 
         if (requestUrl.startsWith("/fail")) {
+            return true;
+        }
+
+        if (requestUrl.startsWith("/api")) {
             return true;
         }
         String accessToken = jwtService.extractAccessToken(request)

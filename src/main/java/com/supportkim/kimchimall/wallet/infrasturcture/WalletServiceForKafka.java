@@ -29,12 +29,12 @@ public class WalletServiceForKafka {
     private final StreamBridge streamBridge;
     @Transactional
     public void processWalletEvent(PaymentEventMessage event) {
-        System.out.println("메시지 소비 - Wallet");
         if (walletTransactionRepository.existsByOrderId(event.getOrderId())) {
             throw new BaseException(ErrorCode.ALREADY_PAYMENT_WALLET_PROCESS);
         }
 
         List<PaymentOrder> paymentOrders = paymentOrderRepository.findByOrderId(event.getOrderId());
+        // List<PaymentOrder> paymentOrders = paymentOrderRepository.findByOrderIdWithLock(event.getOrderId());
         Map<Long, List<PaymentOrder>> paymentOrdersBySellerId = paymentOrders.stream()
                 .collect(Collectors.groupingBy(PaymentOrder::getSellerId));
 
@@ -51,8 +51,6 @@ public class WalletServiceForKafka {
         });
 
         paymentOrders.forEach(PaymentOrder::confirmWalletUpdate);
-
-        streamBridge.send("wallet-result", new LedgerCompleteEventMessage(event.getOrderId()));
     }
 
     private void getUpdatedWallets(Map<Long, List<PaymentOrder>> paymentOrdersBySellerId) {

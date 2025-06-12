@@ -9,12 +9,16 @@ import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Recover;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Component;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeoutException;
 
 @Component @Slf4j
 @RequiredArgsConstructor
@@ -26,6 +30,12 @@ public class TossPaymentExecutor {
     private final TossPaymentFeignClient tossPaymentFeignClient;
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
+    @Retryable(
+            value = { TimeoutException.class },
+            maxAttempts = 2,
+            backoff = @Backoff(delay = 1000, multiplier = 1.5),
+            exceptionExpression = "#{@retryEvaluator.shouldRetry(#root)}"
+    )
     public PaymentExecutionResult execute(PaymentConfirmCommand command) {
         Map<String, Object> requestBody = new HashMap<>();
         requestBody.put("paymentKey", command.getPaymentKey());
@@ -86,6 +96,21 @@ public class TossPaymentExecutor {
             }
             throw new PSPConfirmationException("Unexpected error occurred during payment confirmation", e);
         }
+    }
+
+    private TossPaymentError extractError(FeignException e) {
+        String body = e.contentUTF8();
+        if (body == null || body.trim().isEmpty()) {
+            return TossPaymentError.UNKNOWN;
+        }
+        TossPaymentConfirmationResponse.TossFailureResponse failure = parseFailureResponse(body);
+        return TossPaymentError.get(failure.getCode());
+    }
+
+    @Recover
+    public PaymentExecutionResult recover(PSPConfirmationException e, PaymentConfirmCommand command) {
+        log.error("결제 재시도 실패, 복구 로직 수행 필요: {}", e.getMessage());
+        throw e; // 혹은 fallback PaymentExecutionResult 반환
     }
 
     public static TossPaymentConfirmationResponse.TossFailureResponse parseFailureResponse(String json) {

@@ -10,6 +10,7 @@ import org.springframework.messaging.support.MessageBuilder;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Sinks;
 
+import java.nio.charset.StandardCharsets;
 import java.util.function.Supplier;
 
 @Configuration
@@ -28,7 +29,7 @@ public class PaymentEventPublisher {
     public void publishToPaymentTopic(PaymentEventMessage event) {
         Message<PaymentEventMessage> message = MessageBuilder
                 .withPayload(event)
-                .setHeader(KafkaHeaders.KEY, event.getOrderId()) // 멱등성 키 지정
+                .setHeader(KafkaHeaders.KEY, event.getOrderId().getBytes(StandardCharsets.UTF_8)) // 멱등성 키 지정
                 .build();
 
         sink.tryEmitNext(message);

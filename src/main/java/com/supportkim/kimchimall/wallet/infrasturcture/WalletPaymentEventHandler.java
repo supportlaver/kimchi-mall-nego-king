@@ -15,7 +15,6 @@ import java.util.function.Consumer;
 public class WalletPaymentEventHandler {
     private final WalletServiceForKafka walletServiceForKafka;
 
-
     @Bean
     public Consumer<Message<PaymentEventMessage>> wallet() {
         return message -> {

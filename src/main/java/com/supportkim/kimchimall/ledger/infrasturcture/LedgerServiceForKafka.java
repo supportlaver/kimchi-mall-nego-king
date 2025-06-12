@@ -44,6 +44,7 @@ public class LedgerServiceForKafka {
                 -> new BaseException(ErrorCode.MEMBER_ACCOUNT_NOT_FOUND));
 
         List<PaymentOrder> paymentOrders = paymentOrderRepository.findByOrderId(event.getOrderId());
+        // List<PaymentOrder> paymentOrders = paymentOrderRepository.findByOrderIdWithLock(event.getOrderId());
 
         Map<Long, List<PaymentOrder>> paymentOrdersBySellerId = paymentOrders.stream()
                 .collect(Collectors.groupingBy(PaymentOrder::getSellerId));
@@ -63,8 +64,6 @@ public class LedgerServiceForKafka {
         ledgerEntryRepository.saveAll(ledgerEntries);
         // 업데이트
         paymentOrders.forEach(PaymentOrder::confirmLedgerUpdate);
-
-        streamBridge.send("ledger-result", new LedgerCompleteEventMessage(event.getOrderId()));
     }
     private List<LedgerEntry> createLedgerEntries(List<DoubleAccountsForLedger> ledgerList, List<PaymentOrder> paymentOrders) {
         return ledgerList.stream()

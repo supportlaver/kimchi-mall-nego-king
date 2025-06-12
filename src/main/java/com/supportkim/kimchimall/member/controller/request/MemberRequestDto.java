@@ -10,9 +10,11 @@ import lombok.NoArgsConstructor;
 
 import java.util.ArrayList;
 import java.util.List;
-
+@NoArgsConstructor
 public class MemberRequestDto {
     @Builder @Getter
+    @AllArgsConstructor
+    @NoArgsConstructor
     public static class MemberJoinRequest {
         private String name;
         private String phoneNumber;

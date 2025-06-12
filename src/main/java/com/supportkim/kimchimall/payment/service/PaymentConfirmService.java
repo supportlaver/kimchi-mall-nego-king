@@ -109,9 +109,6 @@ public class PaymentConfirmService {
             // 필요한 추가 처리
         }
 
-        // 모든 업데이트가 끝났다면 paymentEvent 도 Update
-        paymentEvent.confirmPaymentDone();
-
         // 5. 결과 반환
         return new PaymentConfirmationResult(paymentExecutionResult.paymentStatus(), paymentExecutionResult.getFailure());
     }
@@ -297,9 +294,6 @@ public class PaymentConfirmService {
 
         // 장부 업데이트가 끝났다면 Update
         paymentOrders.forEach(PaymentOrder::confirmLedgerUpdate);
-
-        // 모든 업데이트가 끝났다면 paymentEvent 도 Update
-        paymentEvent.confirmPaymentDone();
 
         // 5. 결과 반환
         return new PaymentConfirmationResult(paymentExecutionResult.paymentStatus(), paymentExecutionResult.getFailure());

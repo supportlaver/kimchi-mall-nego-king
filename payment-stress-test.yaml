@@ -1,8 +1,8 @@
 config:
   target: 'http://localhost:8081'
   phases:
-    - duration: 10
-      arrivalRate: 10
+    - duration: 15
+      arrivalRate: 500
       name: Constant Load
   payload:
     path: "ids.csv"
